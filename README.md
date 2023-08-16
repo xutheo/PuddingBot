@@ -44,7 +44,7 @@ Discord bot that will help with transcription/retrieval of timelines
    id - id of the timeline to delete (ex. D103) <br />
    (ADMIN ONLY COMMAND) This command will delete the target timeline <br />
 
-# How to setup WCBot locally:
+# How to setup PuddingBot locally:
 1. Follow the instructions here: https://developers.google.com/workspace/guides/create-credentials#service-account to create a service account
 2. After creating one, go to https://console.cloud.google.com/iam-admin/serviceaccounts -> keys and click Add Key -> Json to generate a json to auth to google sheets
 3. Your key will have an email associated with it.  For example, mine is pcrbot@massive-anagram-336417.iam.gserviceaccount.com.  Give this email editor access to the two sheets that you need to run this bot (Local copy of Woody's Translations sheet and local copy of the sheet above.  Make sure to rename them accordingly.)
@@ -52,4 +52,9 @@ Discord bot that will help with transcription/retrieval of timelines
 5. If you haven't already, follow instructions online to create a discord bot and add it to a server or dm zalteo for an already created bot.
 6. Add a new field to the service_account.json called 'discord_token' and input your discord bot token.
 7. Run main.py
-   
+
+# How to setup PuddingBot on fly.io:
+1. Run iwr https://fly.io/install.ps1 -useb | iex on powershell
+2. Run flyctl auth signup to signup or flyctl auth login to login if you already have an account with fly.io
+3. Run flyctl launch from the base directory of the project (make sure you have a service_account.json file defined)
+4. Run flyctl deploy if it wasn't run already
