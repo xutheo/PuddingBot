@@ -42,7 +42,7 @@ Discord bot that will help with transcription/retrieval of timelines
 5. /delete_tl <br />
    parameters: <br />
    id - id of the timeline to delete (ex. D103) <br />
-   (ADMIN ONLY COMMAND) This command will get the target timeline <br />
+   (ADMIN ONLY COMMAND) This command will delete the target timeline <br />
 
 # How to setup WCBot locally:
 1. Follow the instructions here: https://developers.google.com/workspace/guides/create-credentials#service-account to create a service account
