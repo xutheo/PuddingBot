@@ -56,8 +56,8 @@ async def translate_tl(
         return
     timeline = await convert_and_translate_timeline(tl)
     embed = discord.Embed(title="Translated Timeline",
-                          description=timeline,
-                          color=0xfffeff)
+                        description=timeline,
+                        color=0xfffeff)
     await ctx.respond(embed=embed, ephemeral=(not show))
 
 
@@ -87,6 +87,7 @@ async def transcribe_tl(
             title_str += '0' + str(number_of_timelines)
         else:
             title_str += str(number_of_timelines)
+        '''
         tl_worksheet.update_value('A' + str(number_of_timelines + 2), title_str)
         tl_worksheet.update_value('B' + str(number_of_timelines + 2), timeline)
         # Note that the units are stored from F-J for readability in the sheet
@@ -96,6 +97,18 @@ async def transcribe_tl(
         tl_worksheet.update_value('J' + str(number_of_timelines + 2), unit4)
         tl_worksheet.update_value('K' + str(number_of_timelines + 2), unit5)
         tl_worksheet.update_value('B1', str(number_of_timelines + 1))
+        '''
+        
+        tl_worksheet.update_values_batch(
+            [f'A{number_of_timelines + 2}',
+            f'B{number_of_timelines + 2}',
+            f'G{number_of_timelines + 2}',
+            f'H{number_of_timelines + 2}',
+            f'I{number_of_timelines + 2}',
+            f'J{number_of_timelines + 2}',
+            f'K{number_of_timelines + 2}',
+            'B1'],
+            [[[title_str]],[[timeline]],[[unit1]],[[unit2]],[[unit3]],[[unit4]],[[unit5]],[[str(number_of_timelines + 1)]]])
         await interaction.response.edit_message(content="Saved!", view=None)
     yes_button.callback = yes_button_callback
 
@@ -111,8 +124,8 @@ async def transcribe_tl(
     view.add_item(no_button)
 
     embed = discord.Embed(title="New Timeline",
-                          description=timeline,
-                          color=0xfffeff)
+                        description=timeline,
+                        color=0xfffeff)
     await ctx.respond(embed=embed, ephemeral=True)
     await ctx.respond("Would you like to save this tl?", view=view, ephemeral=True)
 
@@ -163,8 +176,8 @@ async def list_tls(ctx, boss,
     async def previous_button_callback(interaction):
         nonlocal idx
         previous_embed = discord.Embed(title=all_timelines[(idx - 1) % len(all_timelines)][0],
-                              description=all_timelines[(idx - 1) % len(all_timelines)][1],
-                              color=0xfffeff)
+                            description=all_timelines[(idx - 1) % len(all_timelines)][1],
+                            color=0xfffeff)
         idx -= 1
         await interaction.response.edit_message(embed=previous_embed, view=view)
     previous_button.callback = previous_button_callback
@@ -174,8 +187,8 @@ async def list_tls(ctx, boss,
     async def next_button_callback(interaction):
         nonlocal idx
         next_embed = discord.Embed(title=all_timelines[(idx + 1) % len(all_timelines)][0],
-                              description=all_timelines[(idx + 1) % len(all_timelines)][1],
-                              color=0xfffeff)
+                            description=all_timelines[(idx + 1) % len(all_timelines)][1],
+                            color=0xfffeff)
         idx += 1
         await interaction.response.edit_message(embed=next_embed, view=view)
     next_button.callback = next_button_callback
@@ -184,8 +197,8 @@ async def list_tls(ctx, boss,
     done_button = Button(label="Done", style=discord.ButtonStyle.green)
     async def done_button_callback(interaction):
         current_embed = discord.Embed(title=all_timelines[idx % len(all_timelines)][0],
-                              description=all_timelines[idx % len(all_timelines)][1],
-                              color=0xfffeff)
+                            description=all_timelines[idx % len(all_timelines)][1],
+                            color=0xfffeff)
         await interaction.response.edit_message(embed=current_embed, view=None)
     done_button.callback = done_button_callback
 
@@ -195,8 +208,8 @@ async def list_tls(ctx, boss,
     view.add_item(next_button)
 
     embed = discord.Embed(title=all_timelines[idx][0],
-                          description=all_timelines[idx][1],
-                          color=0xfffeff)
+                        description=all_timelines[idx][1],
+                        color=0xfffeff)
     await ctx.respond(embed=embed, ephemeral=True, view=view)
 
 
