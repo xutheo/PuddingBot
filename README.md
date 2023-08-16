@@ -1,7 +1,6 @@
 # WCBot
 
 Discord bot that will help with transcription/retrieval of timelines
-Currently there are two supported commands
 1. /transcribe_tl <br />
    params: <br />
    boss - boss number from 1-5 <br />
@@ -15,8 +14,19 @@ Currently there are two supported commands
 
    ![image](https://github.com/xutheo/WCBot/assets/142357842/7808e43f-cf70-4682-9abb-7c09417184be) <br />
    Responds with a woody-grade technology translation and follows up with an input if you want to save this TL or not <br />
+
+2. /translate_tl <br />
+   params: <br />
+   boss - boss number from 1-5 <br />
+   unit1-5 - the units used in the timeline <br />
+   show - Optional parameter to show others the translated TL <br />
+
+3. /list_tl <br />
+   parameters: <br />
+   id - id of the timeline to retrieve (ex. D103) <br />
+   This command will get the target timeline <br />
    
-2. /list_tls <br />
+4. /list_tls <br />
    parameters: <br />
    boss - boss number from 1-5 <br />
    unit_filter1-5 - filter by these units when looking for tls <br />
@@ -28,6 +38,11 @@ Currently there are two supported commands
 
    ![image](https://github.com/xutheo/WCBot/assets/142357842/5cbf4cde-2799-4bb8-ae02-7008b0664717) <br />
    Responds with a list of tls that you can view with the previous and next buttons <br />
+      
+5. /delete_tl <br />
+   parameters: <br />
+   id - id of the timeline to delete (ex. D103) <br />
+   (ADMIN ONLY COMMAND) This command will delete the target timeline <br />
 
 # How to setup WCBot locally:
 1. Follow the instructions here: https://developers.google.com/workspace/guides/create-credentials#service-account to create a service account
