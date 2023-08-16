@@ -8,7 +8,7 @@ gc = pygsheets.authorize(service_account_file=path)
 def get_translation_mapping(sheet_name):
     # Get the translation mapping
     translation_sheet = gc.open(sheet_name)
-    translation_bank = translation_sheet.worksheet(property='title', value='Translations')  # input
+    translation_bank = translation_sheet.worksheet(property='title', value='Sheet1')  # input
     mapping = []
     all_values = translation_bank.get_all_values()
     for idx, row in enumerate(all_values):

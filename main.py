@@ -6,6 +6,7 @@ from discord.ui import Button, View
 from discord.commands import Option
 import sheets_helper
 import json
+import unicodedata
 
 tabulate.PRESERVE_WHITESPACE = True
 
@@ -22,10 +23,20 @@ async def is_allowed_channel(ctx):
     return ctx.channel.id in channel_id
 
 
+async def convert_and_translate_timeline(tl, translate=True):
+    # Translate timeline using woody-grade translation technology
+    timeline = (await tl.read()).decode('UTF-8')
+    timeline = unicodedata.normalize("NFKC", timeline)
+    if translate:
+        for entry in translation_mapping:
+            timeline = timeline.replace(entry[0], " " + entry[1] + " ")
+    return timeline
+
+
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(
-        type=discord.ActivityType.watching, name="for inters"))
+        type=discord.ActivityType.watching, name="for timelines"))
     print("Bot Online!")
     print("-------------------------")
     print(f"Name: {bot.user.name}")
@@ -34,25 +45,40 @@ async def on_ready():
     print("-------------------------")
 
 
+# =============== Translate TL =============
+@bot.slash_command(guild_ids=guild_id, description="Transcribe TL")
+async def translate_tl(
+        ctx,
+        tl: discord.Attachment,
+        show: Option(bool, "Show this timeline to everyone", required=False, default=False)):
+    if not await is_allowed_channel(ctx):
+        await ctx.respond("Permission denied")
+        return
+    timeline = await convert_and_translate_timeline(tl)
+    embed = discord.Embed(title="Translated Timeline",
+                          description=timeline,
+                          color=0xfffeff)
+    await ctx.respond(embed=embed, ephemeral=(not show))
+
+
 # =============== Transcribe TL =============
 @bot.slash_command(guild_ids=guild_id, description="Transcribe TL")
 async def transcribe_tl(
         ctx,
         boss: Option(int, "1 - 5", min_value=1, max_value=5),
         unit1, unit2, unit3, unit4, unit5,
-        tl: discord.Attachment):
+        tl: discord.Attachment,
+        translate: Option(bool, "Translate the TL to english", required=False, default=True)):
     if not await is_allowed_channel(ctx):
         await ctx.respond("Permission denied")
         return
 
-    # Translate timeline using woody-grade translation technology
-    timeline = (await tl.read()).decode('UTF-8')
-    for entry in translation_mapping:
-        timeline = timeline.replace(entry[0], " " + entry[1] + " ")
+    timeline = await convert_and_translate_timeline(tl)
     tl_worksheet = sheets_helper.get_timelines_worksheet(boss)
 
     # Define yes button for if we want to save this TL
     yes_button = Button(label="Yes", style=discord.ButtonStyle.green)
+
     async def yes_button_callback(interaction):
         number_of_timelines = int(tl_worksheet.get_value('B1'))
         print(number_of_timelines)
@@ -75,6 +101,7 @@ async def transcribe_tl(
 
     # Define no button for if we want to save this TL
     no_button = Button(label="No", style=discord.ButtonStyle.red)
+
     async def no_button_callback(interaction):
         await interaction.response.edit_message(content="Not Saved!", view=None)
     no_button.callback = no_button_callback
@@ -83,13 +110,15 @@ async def transcribe_tl(
     view.add_item(yes_button)
     view.add_item(no_button)
 
-    await ctx.respond(timeline, ephemeral=True)
+    embed = discord.Embed(title="New Timeline",
+                          description=timeline,
+                          color=0xfffeff)
+    await ctx.respond(embed=embed, ephemeral=True)
     await ctx.respond("Would you like to save this tl?", view=view, ephemeral=True)
 
 
 # =============== List TLs for a boss =============
 @bot.slash_command(guild_ids=guild_id, description="List TLs")
-@commands.check(is_allowed_channel)
 async def list_tls(ctx, boss,
         unit_filter1: Option(str, "Enter a unit name", required=False, default=None),
         unit_filter2: Option(str, "Enter a unit name", required=False, default=None),
@@ -170,6 +199,14 @@ async def list_tls(ctx, boss,
                           color=0xfffeff)
     await ctx.respond(embed=embed, ephemeral=True, view=view)
 
+
+# =============== Reload translations from woody translation sheet =============
+@bot.slash_command(guild_ids=guild_id, description="List TLs")
+@commands.has_role(1025780684574433390)
+async def reload_translations(ctx):
+    global translation_mapping
+    translation_mapping = sheets_helper.get_translation_mapping("Woody Translations")
+    await ctx.respond("Retrieved the latest woody-grade translations!", ephemeral=True)
 
 keep_alive()
 token = json.load(open("service_account.json"))['discord_token']
