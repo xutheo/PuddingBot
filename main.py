@@ -118,7 +118,29 @@ async def transcribe_tl(
     await ctx.respond("Would you like to save this tl?", view=view, ephemeral=True)
 
 
-# =============== List TLs for a boss =============
+# =============== Lists one timeline with specified id =============
+@bot.slash_command(guild_ids=guild_id, description="Gets target TL")
+async def list_tl(
+        ctx,
+        id,
+        show: Option(bool, "Show this timeline to everyone", required=False, default=False)):
+    boss = id[1]
+    row = int(id[2:])
+
+    tl_worksheet = sheets_helper.get_timelines_worksheet(boss)
+    timeline = tl_worksheet.get_value('B' + str(row))
+
+    if not timeline or id[2:] == '01':
+        await ctx.respond("A timeline with that ID does not exist!", ephemeral=True)
+        return
+
+    embed = discord.Embed(title=id,
+                        description=timeline,
+                        color=0xfffeff)
+    await ctx.respond(embed=embed, ephemeral=not show)
+
+
+# =============== List all TLs for a boss =============
 @bot.slash_command(guild_ids=guild_id, description="List TLs")
 async def list_tls(ctx, boss,
         unit_filter1: Option(str, "Enter a unit name", required=False, default=None),
@@ -203,23 +225,22 @@ async def list_tls(ctx, boss,
     await ctx.respond(embed=embed, ephemeral=True, view=view)
 
 
-# =============== Reload translations from woody translation sheet =============
+# =============== Deletes one timeline with specified id =============
 @bot.slash_command(guild_ids=guild_id, description="Deletes target TL")
 @commands.has_role(1025780684574433390)
 async def delete_tl(ctx, id):
-
     boss = id[1]
     row = int(id[2:])
 
     tl_worksheet = sheets_helper.get_timelines_worksheet(boss)
     timeline = tl_worksheet.get_value('B' + str(row))
 
-    embed = discord.Embed(title=id,
-                        description=timeline,
-                        color=0xfffeff)
-
     # Define yes button for if we want to save this TL
     yes_button = Button(label="Yes", style=discord.ButtonStyle.red)
+
+    if not timeline or id[2:] == '01':
+        await ctx.respond("A timeline with that ID does not exist!", ephemeral=True)
+        return
 
     async def yes_button_callback(interaction):
         tl_worksheet.delete_rows(row)
@@ -237,6 +258,9 @@ async def delete_tl(ctx, id):
     view.add_item(yes_button)
     view.add_item(no_button)
 
+    embed = discord.Embed(title=id,
+                        description=timeline,
+                        color=0xfffeff)
     await ctx.respond(embed=embed, ephemeral=True)
     await ctx.respond("Are you SURE you want to delete this TL?", view=view, ephemeral=True)
 
@@ -248,6 +272,50 @@ async def update_vocab_bank(ctx):
     global translation_mapping
     translation_mapping = sheets_helper.get_translation_mapping("Woody Translations")
     await ctx.respond("Retrieved the latest woody-grade translations!", ephemeral=True)
+
+
+# =============== Help command =============
+@bot.slash_command(guild_ids=guild_id, description="Get a description of all commands")
+async def help(ctx):
+    embed = discord.Embed(title="Commands Help", color=0xfffeff)
+
+    embed.add_field(
+        name="/translate_tl - Translates a text file timeline with woody-grade technology",
+        value="```\ttl: Attached file containing timeline" +
+            "\n\tshow (Optional): If you want to show this TL to everybody```",
+        inline=False)
+
+    embed.add_field(
+        name="/transcribe_tl - Transcribes a timeline and stores it for further use",
+        value="```\tboss: Boss that you want this TL to target (1-5)" +
+            "\n\tunit1-5: The five units that are a part of the TL" +
+            "\n\ttl: Attached file containing timeline" +
+            "\n\ttranslate (Optional): If you want to translate this TL```",
+        inline=False)
+
+    embed.add_field(
+        name="/list_tl - Gets the target TL with specified ID",
+        value="```\tid: ID of the timeline; ex.'D101'```",
+        inline=False)
+
+    embed.add_field(
+        name="/list_tls - Gets all Tls for a given boss and units filters",
+        value="```\tboss: Boss that you want the TL from (1-5)" +
+            "\n\tunit_filter1-5 (Optional): Unit filters for the TL```",
+        inline=False)
+
+    embed.add_field(
+        name="/delete_tl - Deletes the target TL with specified ID. (ADMIN ONLY)",
+        value="```\tid: ID of the timeline; ex.'D101'```",
+        inline=False)
+
+    embed.add_field(
+        name="/update_vocab_bank - Refreshes woody-grade translations. (ADMIN ONLY)",
+        value="",
+        inline=False)
+
+    await ctx.respond(embed=embed, ephemeral=True)
+
 
 keep_alive()
 token = json.load(open("service_account.json"))['discord_token']
