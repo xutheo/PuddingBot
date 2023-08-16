@@ -1,4 +1,4 @@
-# WCBot
+# PuddingBot
 
 Discord bot that will help with transcription/retrieval of timelines
 1. /transcribe_tl <br />
