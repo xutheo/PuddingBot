@@ -13,19 +13,26 @@ tabulate.PRESERVE_WHITESPACE = True
 translation_mapping = sheets_helper.get_translation_mapping("Woody Translations")
 
 # Define our bot
-guild_id = [839701816991547402, 1002644143589302352, 996415598529613825] # Server ids
+guild_id = [1002644143589302352, 1025780100291112960]  # Server ids
+channel_id = [1067620591038889995, 1141149506021367849]  # Channel ids
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("."))
+
+
+async def is_allowed_channel(ctx):
+    return ctx.channel.id in channel_id
+
 
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(
-        type=discord.ActivityType.watching, name="WC bot"))
+        type=discord.ActivityType.watching, name="for inters"))
     print("Bot Online!")
     print("-------------------------")
     print(f"Name: {bot.user.name}")
     print(f"ID: {bot.user.id}")
     print(f"Servers in: {len(bot.guilds)}")
     print("-------------------------")
+
 
 # =============== Transcribe TL =============
 @bot.slash_command(guild_ids=guild_id, description="Transcribe TL")
@@ -34,6 +41,9 @@ async def transcribe_tl(
         boss: Option(int, "1 - 5", min_value=1, max_value=5),
         unit1, unit2, unit3, unit4, unit5,
         tl: discord.Attachment):
+    if not await is_allowed_channel(ctx):
+        await ctx.respond("Permission denied")
+        return
 
     # Translate timeline using woody-grade translation technology
     timeline = (await tl.read()).decode('UTF-8')
@@ -51,7 +61,7 @@ async def transcribe_tl(
             title_str += '0' + str(number_of_timelines)
         else:
             title_str += str(number_of_timelines)
-        tl_worksheet.update_value('A' + str(number_of_timelines + 2), 'D' + title_str)
+        tl_worksheet.update_value('A' + str(number_of_timelines + 2), title_str)
         tl_worksheet.update_value('B' + str(number_of_timelines + 2), timeline)
         # Note that the units are stored from F-J for readability in the sheet
         tl_worksheet.update_value('G' + str(number_of_timelines + 2), unit1)
@@ -69,21 +79,27 @@ async def transcribe_tl(
         await interaction.response.edit_message(content="Not Saved!", view=None)
     no_button.callback = no_button_callback
 
-    view = View()
+    view = View(timeout=None)
     view.add_item(yes_button)
     view.add_item(no_button)
 
     await ctx.respond(timeline, ephemeral=True)
     await ctx.respond("Would you like to save this tl?", view=view, ephemeral=True)
 
+
 # =============== List TLs for a boss =============
 @bot.slash_command(guild_ids=guild_id, description="List TLs")
+@commands.check(is_allowed_channel)
 async def list_tls(ctx, boss,
         unit_filter1: Option(str, "Enter a unit name", required=False, default=None),
         unit_filter2: Option(str, "Enter a unit name", required=False, default=None),
         unit_filter3: Option(str, "Enter a unit name", required=False, default=None),
         unit_filter4: Option(str, "Enter a unit name", required=False, default=None),
         unit_filter5: Option(str, "Enter a unit name", required=False, default=None)):
+    if not await is_allowed_channel(ctx):
+        await ctx.respond("Permission denied")
+        return
+
     tl_worksheet = sheets_helper.get_timelines_worksheet(boss)
     number_of_timelines = int(tl_worksheet.get_value('B1'))
     if number_of_timelines == 0:
