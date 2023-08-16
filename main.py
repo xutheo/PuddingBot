@@ -46,7 +46,7 @@ async def on_ready():
 
 
 # =============== Translate TL =============
-@bot.slash_command(guild_ids=guild_id, description="Transcribe TL")
+@bot.slash_command(guild_ids=guild_id, description="Translate TL")
 async def translate_tl(
         ctx,
         tl: discord.Attachment,
@@ -81,34 +81,22 @@ async def transcribe_tl(
 
     async def yes_button_callback(interaction):
         number_of_timelines = int(tl_worksheet.get_value('B1'))
-        print(number_of_timelines)
-        title_str = 'D' + str(boss)
-        if number_of_timelines + 1 < 10:
-            title_str += '0' + str(number_of_timelines)
-        else:
-            title_str += str(number_of_timelines)
-        '''
-        tl_worksheet.update_value('A' + str(number_of_timelines + 2), title_str)
-        tl_worksheet.update_value('B' + str(number_of_timelines + 2), timeline)
+
+        # Title dynamically updates in google sheets for when we delete rows
+        title_str = "=CONCAT(\"D" + str(boss) + "\", IF(ROW() < 10, CONCAT(0, ROW()), ROW()))"
+
         # Note that the units are stored from F-J for readability in the sheet
-        tl_worksheet.update_value('G' + str(number_of_timelines + 2), unit1)
-        tl_worksheet.update_value('H' + str(number_of_timelines + 2), unit2)
-        tl_worksheet.update_value('I' + str(number_of_timelines + 2), unit3)
-        tl_worksheet.update_value('J' + str(number_of_timelines + 2), unit4)
-        tl_worksheet.update_value('K' + str(number_of_timelines + 2), unit5)
-        tl_worksheet.update_value('B1', str(number_of_timelines + 1))
-        '''
-        
+        tl_worksheet.update_value(f'A{number_of_timelines + 2}', title_str, parse=True)
         tl_worksheet.update_values_batch(
-            [f'A{number_of_timelines + 2}',
-            f'B{number_of_timelines + 2}',
-            f'G{number_of_timelines + 2}',
-            f'H{number_of_timelines + 2}',
-            f'I{number_of_timelines + 2}',
-            f'J{number_of_timelines + 2}',
-            f'K{number_of_timelines + 2}',
-            'B1'],
-            [[[title_str]],[[timeline]],[[unit1]],[[unit2]],[[unit3]],[[unit4]],[[unit5]],[[str(number_of_timelines + 1)]]])
+            [f'B{number_of_timelines + 2}',
+                f'G{number_of_timelines + 2}',
+                f'H{number_of_timelines + 2}',
+                f'I{number_of_timelines + 2}',
+                f'J{number_of_timelines + 2}',
+                f'K{number_of_timelines + 2}',
+                'B1'],
+            [[[timeline]], [[unit1]], [[unit2]], [[unit3]], [[unit4]], [[unit5]], [[str(number_of_timelines + 1)]]])
+
         await interaction.response.edit_message(content="Saved!", view=None)
     yes_button.callback = yes_button_callback
 
@@ -159,7 +147,6 @@ async def list_tls(ctx, boss,
                 result_matrix.append(row)
         return result_matrix
 
-    #print(all_timelines)
     all_timelines = filter_unit(all_timelines, unit_filter1)
     all_timelines = filter_unit(all_timelines, unit_filter2)
     all_timelines = filter_unit(all_timelines, unit_filter3)
@@ -173,6 +160,7 @@ async def list_tls(ctx, boss,
     idx = 0
     # Define previous button for displaying tls
     previous_button = Button(label="Previous", style=discord.ButtonStyle.blurple)
+
     async def previous_button_callback(interaction):
         nonlocal idx
         previous_embed = discord.Embed(title=all_timelines[(idx - 1) % len(all_timelines)][0],
@@ -184,6 +172,7 @@ async def list_tls(ctx, boss,
 
     # Define next button for displaying tls
     next_button = Button(label="Next", style=discord.ButtonStyle.blurple)
+
     async def next_button_callback(interaction):
         nonlocal idx
         next_embed = discord.Embed(title=all_timelines[(idx + 1) % len(all_timelines)][0],
@@ -195,6 +184,7 @@ async def list_tls(ctx, boss,
 
     # Define done button for displaying tls
     done_button = Button(label="Done", style=discord.ButtonStyle.green)
+
     async def done_button_callback(interaction):
         current_embed = discord.Embed(title=all_timelines[idx % len(all_timelines)][0],
                             description=all_timelines[idx % len(all_timelines)][1],
@@ -214,9 +204,47 @@ async def list_tls(ctx, boss,
 
 
 # =============== Reload translations from woody translation sheet =============
-@bot.slash_command(guild_ids=guild_id, description="List TLs")
+@bot.slash_command(guild_ids=guild_id, description="Deletes target TL")
 @commands.has_role(1025780684574433390)
-async def reload_translations(ctx):
+async def delete_tl(ctx, id):
+
+    boss = id[1]
+    row = int(id[2:])
+
+    tl_worksheet = sheets_helper.get_timelines_worksheet(boss)
+    timeline = tl_worksheet.get_value('B' + str(row))
+
+    embed = discord.Embed(title=id,
+                        description=timeline,
+                        color=0xfffeff)
+
+    # Define yes button for if we want to save this TL
+    yes_button = Button(label="Yes", style=discord.ButtonStyle.red)
+
+    async def yes_button_callback(interaction):
+        tl_worksheet.delete_rows(row)
+        await interaction.response.edit_message(content="Deleted " + id + "!", view=None)
+    yes_button.callback = yes_button_callback
+
+    # Define no button for if we want to save this TL
+    no_button = Button(label="No", style=discord.ButtonStyle.blurple)
+
+    async def no_button_callback(interaction):
+        await interaction.response.edit_message(content="Not Deleted!", view=None)
+    no_button.callback = no_button_callback
+
+    view = View()
+    view.add_item(yes_button)
+    view.add_item(no_button)
+
+    await ctx.respond(embed=embed, ephemeral=True)
+    await ctx.respond("Are you SURE you want to delete this TL?", view=view, ephemeral=True)
+
+
+# =============== Reload translations from woody translation sheet =============
+@bot.slash_command(guild_ids=guild_id, description="Pulls the latest woody-grade translations")
+@commands.has_role(1025780684574433390)
+async def update_vocab_bank(ctx):
     global translation_mapping
     translation_mapping = sheets_helper.get_translation_mapping("Woody Translations")
     await ctx.respond("Retrieved the latest woody-grade translations!", ephemeral=True)
