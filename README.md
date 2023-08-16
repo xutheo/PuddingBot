@@ -32,8 +32,9 @@ Currently there are two supported commands
 # How to setup WCBot locally:
 1. Follow the instructions here: https://developers.google.com/workspace/guides/create-credentials#service-account to create a service account
 2. After creating one, go to https://console.cloud.google.com/iam-admin/serviceaccounts -> keys and click Add Key -> Json to generate a json to auth to google sheets
-3. Rename the file to service_account.json and add it to the base folder of your project
-4. If you haven't already, follow instructions online to create a discord bot or dm zalteo for an already created bot.
-5. Add a new field to the service_account.json called 'discord_token' and input your discord bot token.
-6. Run main.py
+3. Your key will have an email associated with it.  For example, mine is pcrbot@massive-anagram-336417.iam.gserviceaccount.com.  Give this email editor access to the two sheets that you need to run this bot (Local copy of Woody's Translations sheet and local copy of the sheet above.  Make sure to rename them accordingly.)
+4. Rename the file to service_account.json and add it to the base folder of your project
+5. If you haven't already, follow instructions online to create a discord bot and add it to a server or dm zalteo for an already created bot.
+6. Add a new field to the service_account.json called 'discord_token' and input your discord bot token.
+7. Run main.py
    
