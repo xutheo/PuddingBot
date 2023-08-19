@@ -11,7 +11,7 @@ import unicodedata
 tabulate.PRESERVE_WHITESPACE = True
 
 # Cache the translation mapping
-translation_mapping = sheets_helper.get_translation_mapping("Woody Translations")
+translation_mapping = sheets_helper.get_translation_mapping()
 
 # Define our bot
 guild_id = [1002644143589302352, 1025780100291112960]  # Server ids
@@ -270,7 +270,7 @@ async def delete_tl(ctx, id):
 @commands.has_role(1025780684574433390)
 async def update_vocab_bank(ctx):
     global translation_mapping
-    translation_mapping = sheets_helper.get_translation_mapping("Woody Translations")
+    translation_mapping = sheets_helper.get_translation_mapping()
     await ctx.respond("Retrieved the latest woody-grade translations!", ephemeral=True)
 
 

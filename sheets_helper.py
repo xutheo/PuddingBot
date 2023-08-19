@@ -3,12 +3,13 @@ import pygsheets
 # Auth things with gsheets
 path = 'service_account.json'
 gc = pygsheets.authorize(service_account_file=path)
+translation_sheet_id = '11B6-6mmQC4XMTiSadrfKGlS_y4qSnLzfFHj1_W8XLhI'
 
 
-def get_translation_mapping(sheet_name):
+def get_translation_mapping():
     # Get the translation mapping
-    translation_sheet = gc.open(sheet_name)
-    translation_bank = translation_sheet.worksheet(property='title', value='Sheet1')  # input
+    translation_sheet = gc.open_by_key(translation_sheet_id)
+    translation_bank = translation_sheet.worksheet(property='id', value=0)  # input
     mapping = []
     all_values = translation_bank.get_all_values()
     for idx, row in enumerate(all_values):
