@@ -323,11 +323,10 @@ async def help(ctx):
         inline=False)
     
     embed.add_field(
-        name = "/add_temp_channel - Temporarily grants bot usage access to a channel. (ADMIN ONLY) [moo WIP]",
-        value = "````\tchannel: Discord Channel```",
-        inline=False
-    )
-
+        name="/add_temp_channel - Temporarily grants bot usage access to a channel. (ADMIN ONLY) [moo WIP]",
+        value="````\tchannel: Discord Channel```",
+        inline=False)
+    
     await ctx.respond(embed=embed, ephemeral=True)
 
 keep_alive()
