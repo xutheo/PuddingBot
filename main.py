@@ -23,7 +23,9 @@ tls = {1: sheets_helper.Timelines(1),
 
        # Define our bot
 guild_id = [1002644143589302352, 1025780100291112960]  # Server ids
-channel_id = [1067620591038889995, 1141149506021367849]  # Channel ids
+channel_id = [1067620591038889995, 1141149506021367849, 
+            1099083593222983700, 1102872644413571103, 
+            1102872692178309131, 1102872715473457224]  # Channel ids
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("."))
 
 
@@ -384,6 +386,12 @@ async def update_vocab_bank(ctx):
     translation_mapping = sheets_helper.get_translation_mapping()
     await ctx.respond("Retrieved the latest woody-grade translations!", ephemeral=True)
 
+# =============== Temporary Channel Access Command (WIP) =============
+@bot.slash_command(guild_ids=guild_id, description="Enables bot commands to be used in specified channel **TEMPORARILY**")
+@commands.has_role(1025780684574433390)
+async def add_temp_channel(ctx, channel: discord.TextChannel):
+    channel_id.append(channel.id)
+    await ctx.respond(f"{channel} with channel ID {channel.id} has been temporarily granted bot access.", ephemeral=False)
 
 # =============== Help command =============
 @bot.slash_command(guild_ids=guild_id, description="Get a description of all commands")
@@ -424,9 +432,13 @@ async def help(ctx):
         name="/update_vocab_bank - Refreshes woody-grade translations. (ADMIN ONLY)",
         value="",
         inline=False)
-
+    
+    embed.add_field(
+        name="/add_temp_channel - Temporarily grants bot usage access to a channel. (ADMIN ONLY) [moo WIP]",
+        value="````\tchannel: Discord Channel```",
+        inline=False)
+    
     await ctx.respond(embed=embed, ephemeral=True)
-
 
 keep_alive()
 token = json.load(open("service_account.json"))['discord_token']
