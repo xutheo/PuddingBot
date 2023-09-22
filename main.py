@@ -145,14 +145,14 @@ async def load_tls(ctx, boss):
     Timelines.load_to_db(int(boss))
     await ctx.respond(f"Loaded TLs for boss: {boss}")
 
-
+'''
 # =============== Temporary Channel Access Command (WIP) =============
 @bot.slash_command(guild_ids=guild_id, description="Enables bot commands to be used in specified channel **TEMPORARILY**")
 @commands.has_role(1025780684574433390)
 async def add_temp_channel(ctx, channel: discord.TextChannel):
     channel_id.append(channel.id)
     await ctx.respond(f"{channel} with channel ID {channel.id} has been temporarily granted bot access.", ephemeral=False)
-
+'''
 
 # =============== Help command =============
 @bot.slash_command(guild_ids=guild_id, description="Get a description of all commands")
@@ -161,29 +161,27 @@ async def help(ctx):
 
     embed.add_field(
         name="/translate_tl - Translates a text file timeline with woody-grade technology",
-        value="```\ttl: Attached file containing timeline" +
-            "\n\tshow (Optional): If you want to show this TL to everybody```",
+        value="```tl: Attached file containing timeline" +
+            "\nshow (Optional): Show this TL to everybody```",
         inline=False)
 
     embed.add_field(
         name="/list_tl - Gets the target TL with specified ID",
-        value="```\tid: ID of the timeline; ex.'D101'```",
+        value="```id: ID of the timeline; ex.'D10'" +
+            "\nshow (Optional): Show this TL to everybody" +
+            "\ncompact (Optional): Compact TL display - True on mobile```",
         inline=False)
 
     embed.add_field(
-        name="/list_tls - Gets all Tls for a given boss and units filters",
-        value="```\tboss: Boss that you want the TL from (1-5)" +
-            "\n\tunit_filter1-5 (Optional): Unit filters for the TL```",
+        name="/list_tls - Gets all Tls for a given boss",
+        value="```boss: Boss that you want the TL from (1-5)" +
+            "\nshow (Optional): Show the picked TL to everybody" +
+            "\ncompact (Optional): Compact TL display - True on mobile```",
         inline=False)
 
     embed.add_field(
         name="/update_vocab_bank - Refreshes woody-grade translations. (ADMIN ONLY)",
         value="",
-        inline=False)
-    
-    embed.add_field(
-        name="/add_temp_channel - Temporarily grants bot usage access to a channel. (ADMIN ONLY) [moo WIP]",
-        value="````\tchannel: Discord Channel```",
         inline=False)
     
     await ctx.respond(embed=embed, ephemeral=True)

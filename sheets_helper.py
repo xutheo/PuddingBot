@@ -13,6 +13,14 @@ boss_urls = {
     5: "https://redive.estertion.win/icon/unit/301403.webp"
 }
 
+boss_names = {
+    1: "Wyvern",
+    2: "Gryphon",
+    3: "Orc Chief",
+    4: "Aquarius",
+    5: "Medusa"
+}
+
 sheet_ids = {
     1: "1344830706",
     2: "1148100815",

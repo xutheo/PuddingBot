@@ -76,6 +76,7 @@ class Timeline:
         actions_length = len(self.tl_actions[0])
         for tl_action in self.tl_actions:
             del tl_action[labels_length - 2: actions_length - 2]
+        self.boss_name = sheets_helper.boss_names[boss]
 
 
     def __str__(self):

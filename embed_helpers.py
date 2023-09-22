@@ -27,15 +27,15 @@ class GetTLView(View):
         await interaction.response.edit_message(embed=previous_embed, view=self)
 
 
-def get_base_embed(timeline):
+def get_base_embed(timeline, mobile):
     embed = discord.Embed(
         type="rich",
-        title=timeline.id,
         description=f'Author: {timeline.author}\nTranscriber: {timeline.transcriber}\nEV: {timeline.ev}\nST_DEV: {timeline.st_dev}\nStyle: {timeline.style}\nStatus: {timeline.status}',
-        color=0xffffff,
-        url='https://docs.google.com/spreadsheets/d/1Zytb-0_ln6WARlCgn3opy-lfnuUr76x83iBNpUnu5wE/edit#gid=' + str(timeline.sheet_id) + '&range=' + chr(timeline.starting_cell_tuple[1] + 64) + str(timeline.starting_cell_tuple[0]))
-    embed.set_thumbnail(url=timeline.thumbnail_url)
-
+        color=0xffffff)
+    embed.set_author(name=f'{timeline.id} - {timeline.boss_name}',
+                     url='https://docs.google.com/spreadsheets/d/1Zytb-0_ln6WARlCgn3opy-lfnuUr76x83iBNpUnu5wE/edit#gid=' +
+                         str(timeline.sheet_id) + '&range=' + chr(timeline.starting_cell_tuple[1] + 64) + str(timeline.starting_cell_tuple[0]),
+                     icon_url=f'{timeline.thumbnail_url}')
     unit_string = ''
     for unit in timeline.units:
         unit_string += f'{unit.name}:LV{unit.level}/R{unit.rank}/{unit.star}⭐/UE:{unit.ue}\n'
@@ -49,12 +49,12 @@ def get_base_embed(timeline):
 
 
 def get_display_embeds(timeline):
-    embeds = [get_base_embed(timeline)]
+    embeds = [get_base_embed(timeline, False)]
     embed_idx = 0
     embed_limit = 1012
     current_char = 0
-    unit_first_total_line_limit = 42  # Dynamic calculation needed when unit column is present
-    total_line_limit = 40  # Dynamic calculation needed when unit column is present
+    unit_first_total_line_limit = 55  # Dynamic calculation needed when unit column is present
+    total_line_limit = 54  # Dynamic calculation needed when unit column is present
     max_time_length = max([len(x[0]) for x in timeline.tl_actions])
     max_unit_length = max([len(x[1]) for x in timeline.tl_actions])
     line_limit = total_line_limit - max_time_length - 4  # Limit of characters per line in the action description embed
@@ -67,7 +67,7 @@ def get_display_embeds(timeline):
     action_string = ''
 
     def get_number_of_extra_lines(text):
-        print(text)
+        #print(text)
         if len(text) <= line_limit:
             return 0
         line_split = text.split("\n")
@@ -78,6 +78,7 @@ def get_display_embeds(timeline):
             action_split = line.split(" ")
             for act in action_split:
                 if len(act) + char_count > line_limit:
+                    print("line break: " + act)
                     extra_lines += 1
                     char_count = 0
                 char_count += len(act) + 1
@@ -110,7 +111,7 @@ def get_display_embeds(timeline):
             action_string = ''
             current_char = 0
             embed_idx += 1
-            embeds.append(get_base_embed(timeline))
+            embeds.append(get_base_embed(timeline, False))
 
         time_string += action[0] + (number_of_extra_lines + 1) * "\n"
         flex_string += flex + (number_of_extra_lines + 1) * "\n"
@@ -146,7 +147,7 @@ def get_display_embeds(timeline):
 
 def get_display_embeds_mobile(timeline):
     embed_string = ''
-    embeds = [get_base_embed(timeline)]
+    embeds = [get_base_embed(timeline, True)]
     embed_idx = 0
     embed_limit = 1000
 
@@ -163,7 +164,7 @@ def get_display_embeds_mobile(timeline):
             #print("actual length: " + str(len(f"```{embed_string}```")))
             embed_string = ''
             embed_idx += 1
-            embeds.append(get_base_embed(timeline))
+            embeds.append(get_base_embed(timeline, True))
 
         if len(action[0]) + len(action_description) + len(flex) != 0:
             string_begin = f'{action[0]}: ' if len(action[0]) > 0 else ''
