@@ -1,15 +1,14 @@
 from sqlitedict import SqliteDict
 import sheets_helper
-from sheets_helper import sheet_ids
-from sheets_helper import boss_urls
+from clan_battle_info import dtier_sheet_ids, boss_names, boss_image_urls
 import os
 sqlitedict_base_path = f"/mnt/timeline_data/test_"
 if os.environ['COMPUTERNAME'] == 'ZALTEO':
     sqlitedict_base_path = f"./mnt/timeline_data/test_"
 
-
 def load_to_db(boss):
     timelines = SqliteDict(sqlitedict_base_path + str(boss) + '.sqlite', autocommit=True)
+    timelines.clear()
     wk_sht = sheets_helper.get_timelines_worksheet(boss)
     tl_start = wk_sht.find('Original Author: [^_]', searchByRegex=True)
     tl_end = wk_sht.find('Extra Notes')
@@ -46,9 +45,9 @@ class Timeline:
     def __init__(self, tl_data, boss, tl_cell_tuple):
         self.units = []
         self.id = tl_data[0][0]
-        self.sheet_id = sheet_ids[boss]
+        self.sheet_id = dtier_sheet_ids[boss]
         self.starting_cell_tuple = tl_cell_tuple
-        self.thumbnail_url = boss_urls[boss]
+        self.thumbnail_url = boss_image_urls[boss]
         self.author = "" if not tl_data[0][1] else tl_data[0][1].split('Original Author: ')[1]
         print(self.author)
         print(tl_data)
@@ -76,7 +75,7 @@ class Timeline:
         actions_length = len(self.tl_actions[0])
         for tl_action in self.tl_actions:
             del tl_action[labels_length - 2: actions_length - 2]
-        self.boss_name = sheets_helper.boss_names[boss]
+        self.boss_name = boss_names[boss]
 
 
     def __str__(self):

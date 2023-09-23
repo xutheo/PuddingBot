@@ -11,6 +11,7 @@ import os
 from discord.ui import Button, View
 from embed_helpers import get_display_embeds_mobile, get_display_embeds, GetTLView
 from functools import partial
+from clan_battle_info import boss_names, boss_image_urls
 
 tabulate.PRESERVE_WHITESPACE = True
 
@@ -81,7 +82,7 @@ async def get_tl(
 
     timeline = Timelines.get_from_db(boss, id)
     if timeline is None:
-        await ctx.respond("A timeline with that ID does not exist!", ephemeral=True)
+        await ctx.respond(f"A timeline with that ID does not exist!\nPlease run \"/load_tls {boss}\" if you have written {id} recently.", ephemeral=True)
         return
 
     embeds = get_display_embeds_mobile(timeline) if mobile or compact else get_display_embeds(timeline)
@@ -102,7 +103,8 @@ async def list_tls(
 
     view = View()
     timeline_descriptions = ''
-    thumbnail_url = ""
+    thumbnail_url = boss_image_urls[boss]
+    boss_name = boss_names[boss]
 
     async def button_callback(interaction, timeline):
         embeds = get_display_embeds_mobile(timeline) if mobile or compact else get_display_embeds(timeline)
@@ -115,16 +117,15 @@ async def list_tls(
 
         button.callback = d[f'callback{id}']
         view.add_item(button)
-        thumbnail_url = tl.thumbnail_url
 
-        timeline_descriptions += f'{id}: ' + ', '.join([unit.name for unit in tl.units]) + '\n'
+        timeline_descriptions += f'{id}: ' + ', '.join([unit.name for unit in tl.units]) + f', EV: {tl.ev}' + '\n\n'
 
     embed = discord.Embed(
         type="rich",
-        title=f"Timelines for boss {boss}",
-        description=f'{timeline_descriptions}',
+        description=f'{timeline_descriptions}' if len(timelines) > 0 else f'No timelines to display currently.\nPlease run \"/load_tls {boss}\" if you have written one recently.',
         color=0xffffff)
-    embed.set_thumbnail(url=thumbnail_url)
+    embed.set_author(name=f'Timelines for boss {boss} - {boss_name}',
+                     icon_url=f'{thumbnail_url}')
 
     await ctx.respond(embed=embed, ephemeral=(not show), view=view)
 
@@ -143,7 +144,7 @@ async def update_vocab_bank(ctx):
 async def load_tls(ctx, boss):
     await ctx.defer()
     Timelines.load_to_db(int(boss))
-    await ctx.respond(f"Loaded TLs for boss: {boss}")
+    await ctx.respond(f"Loaded TLs for boss: {boss}", ephemeral=True)
 
 '''
 # =============== Temporary Channel Access Command (WIP) =============
@@ -166,7 +167,7 @@ async def help(ctx):
         inline=False)
 
     embed.add_field(
-        name="/list_tl - Gets the target TL with specified ID",
+        name="/get_tl - Gets the target TL with specified ID",
         value="```id: ID of the timeline; ex.'D10'" +
             "\nshow (Optional): Show this TL to everybody" +
             "\ncompact (Optional): Compact TL display - True on mobile```",
@@ -180,10 +181,15 @@ async def help(ctx):
         inline=False)
 
     embed.add_field(
+        name="/load_tls - Makes the bot retrieve the latest udpates to TLs for a boss",
+        value="```boss: Boss that you want the TL from (1-5)```",
+        inline=False)
+
+    embed.add_field(
         name="/update_vocab_bank - Refreshes woody-grade translations. (ADMIN ONLY)",
         value="",
         inline=False)
-    
+
     await ctx.respond(embed=embed, ephemeral=True)
 
 keep_alive()
