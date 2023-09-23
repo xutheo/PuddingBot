@@ -12,12 +12,13 @@ from discord.ui import Button, View
 from embed_helpers import get_display_embeds_mobile, get_display_embeds, GetTLView
 from functools import partial
 from clan_battle_info import boss_names, boss_image_urls
+import re
 
 tabulate.PRESERVE_WHITESPACE = True
 
 # Cache the translation mapping and animation bank
 translation_mapping = sheets_helper.get_translation_mapping()
-animation_bank = sheets_helper.get_animation_videos(False)
+animation_bank = sheets_helper.get_animation_videos()
 
 # Define our bot
 guild_id = [1002644143589302352, 1025780100291112960]  # Server ids
@@ -35,11 +36,16 @@ async def is_allowed_channel(ctx):
 async def convert_and_translate_timeline(tl, translate=True):
     # Translate timeline using woody-grade translation technology
     timeline = (await tl.read()).decode('UTF-8')
-    timeline = unicodedata.normalize("NFKC", timeline)
     if translate:
-        for entry in translation_mapping:
-            timeline = timeline.replace(entry[0], " " + entry[1] + " ")
+        timeline = translate_text(timeline)
     return timeline
+
+
+async def translate_text(text):
+    text = unicodedata.normalize("NFKC", text)
+    for entry in translation_mapping:
+        text = text.replace(entry[0], " " + entry[1] + " ")
+    return text
 
 
 @bot.event
@@ -133,72 +139,122 @@ async def list_tls(
 
 # =============== Animation Cancel command =============
 @bot.slash_command(guild_ids=guild_id, description="Gets animation cancel guide video on specified character.")
-async def animation_cancel(ctx, character,
-                            show: Option(bool, "Show this to everyone", required=False, default=False)):
-    works = False
-    skillNameJP = []
-    skillVideo = []
-    print(animation_bank)
+async def animation_cancel(
+        ctx,
+        character,
+        show: Option(bool, "Show this to everyone", required=False, default=False)):
 
+    if character.strip().lower() not in animation_bank:
+        await ctx.respond(f'Animation cancel video with character "{character}" not found.', ephemeral=True)
+        return
+
+    print(animation_bank)
+    '''
     for i in range(len(animation_bank)):
         if animation_bank[i][0].lower() == character.lower():
             character = animation_bank[i][0]
-            skillNum = len(animation_bank[i][1])
-            for j in range(skillNum):
+            skill_num = len(animation_bank[i][1])
+            for j in range(skill_num):
                 works = True
                 skill_data = str(animation_bank[i][1][j]).split(" ")
                 
                 if len(skill_data) > 2: 
-                    skillNameJP.append(f"{' '.join(skill_data[:-2])} - {skill_data[len(skill_data) - 2]}".strip())
+                    skill_name_jp.append(f"{' '.join(skill_data[:-2])} - {skill_data[len(skill_data) - 2]}".strip())
                 else:
-                    skillNameJP.append(f"{' '.join(skill_data[:-1])}".strip())
-                skillVideo.append(skill_data[len(skill_data) - 1].strip())
+                    skill_name_jp.append(f"{' '.join(skill_data[:-1])}".strip())
+                skill_video.append(skill_data[len(skill_data) - 1].strip())
             break
-    if not works: 
-        await ctx.respond(f'Animation cancel video with character "{character}" not found.', ephemeral=True)
-        return
+    '''
 
     embed = discord.Embed(title=f"Animation Cancel for {character}", color=0xfffeff)
-    for i in range(skillNum):
+    animations = animation_bank[character.strip().lower()]
+    for animation in animations:
+        split_idx = animation.find('https')
+        youtube_url = animation[split_idx:]
+        skill_description_jp = animation[:split_idx]
+        skill_description_en = await translate_text(skill_description_jp)
+        all_english = re.match("^[ ()A-Za-z0-9_-]*$", skill_description_en)
+
         embed.add_field(
-            name=f"{skillNameJP[i]}",
-            value=f"{skillVideo[i]}",
+            name=f'{skill_description_en}' if all_english else f'{skill_description_jp}',
+            value=f"{youtube_url}",
             inline=False)
-    
+
     await ctx.respond(embed=embed, ephemeral=(not show))
 
 
 # =============== Show Animation Cancel Units command =============
 @bot.slash_command(guild_ids=guild_id, 
                 description="Displays all characters that have an animation cancel video available.")
-async def animation_cancel_unit_names(ctx, bad_only: Option(bool,"Show messed-up names only"),show: Option(bool, "Show this to everyone", required=False, default=False)):
-    embed = discord.Embed(title="Units With Animation Cancel", description="Unit Names With Animation Cancel", color=0xfffeff)
+async def animation_cancel_unit_names(ctx,show: Option(bool, "Show this to everyone", required=False, default=False)):
+    embed = discord.Embed(
+        title="Unit names with animation cancel",
+        description="These names can be used with the /animation_cancel command and are case-insensitive",
+        color=0xfffeff
+    )
+    results = []
+    for i in animation_bank:
+        results.append(i.capitalize())
+
+    results.sort()
+    results_string = ""
+    name_count = 0
+    names_in_each_column = len(results)//3
+    field_limit = 1024
+
+    for result in results:
+        if len(results_string) + len(result) + 1 > field_limit or name_count + 1 > names_in_each_column:
+            embed.add_field(
+                name="",
+                value=results_string,
+                inline=True
+            )
+            results_string = f'{result}\n'
+            name_count = 1
+            continue
+
+        results_string += f'{result}\n'
+        name_count += 1
+
+    embed.add_field(
+        name="",
+        value=results_string,
+        inline=True
+    )
+
+    await ctx.respond(embed=embed, ephemeral=(not show))
+
+    ''' embed = discord.Embed(title="Units With Animation Cancel", description="Unit Names With Animation Cancel",
+                          color=0xfffeff)
     bad_names = []
-    names_bank = [i[0] for i in animation_bank]
-    
-    if bad_only:
+    names_bank = animation_bank
+
+    if True:
         for i in names_bank:
             if not any(i in j for j in translation_mapping):
                 bad_names.append(i)
-    else: bad_names = names_bank
-    
+    else:
+        bad_names = names_bank
+
     if len(bad_names) == 0:
         await ctx.respond("No characters with messed up names found.")
-    
-    bad_names = [bad_names[i:i+(len(bad_names)//3)] for i in range(0, len(bad_names), len(bad_names)//3)]
-    
+
+    bad_names = [bad_names[i:i + (len(bad_names) // 3)] for i in range(0, len(bad_names), len(bad_names) // 3)]
+    print(bad_names)
     for i in range(3):
         if len(bad_names) == 4:
-            if len(bad_names[3]) > 1 and (i == 1): 
+            print("hi")
+            if len(bad_names[3]) > 1 and (i == 1):
                 bad_names[i].append(bad_names[3][1])
-            elif i == 0: 
+            elif i == 0:
                 bad_names[i].append(bad_names[3][0])
         embed.add_field(
             name="",
             value="\n".join(bad_names[i]),
             inline=True)
-    
-    await ctx.respond(embed=embed, ephemeral=(not show))
+
+    await ctx.respond(embed=embed, ephemeral=(not show))'''
+
     
     
 # =============== Reload translations from woody translation sheet =============
@@ -252,16 +308,15 @@ async def help(ctx):
         inline=False)
     
     embed.add_field(
-        name="/animation_cancel - Displays animation cancel video for given character",
+        name="/animation_cancel - Displays animation cancel videos for given character",
         value="```character: Character you want the animation cancel videos for" + 
-            "\nshow (Optional): Show the animation cancel videos to everybody```",
+            "\nshow (Optional): Show the videos to everybody```",
         inline=False
     )
     
     embed.add_field(
-        name="/animation_cancel_unit_names - Displays all characters with an animation cancel video",
-        value="```bad_only: Display the list of characters that have a different naming convention only" +
-            "show (Optional): Show the list of units to everybody```",
+        name="/animation_cancel_unit_names - Character names with animation cancel videos",
+        value="```show (Optional): Show the list of units to everybody```",
         inline=False
     )
 
