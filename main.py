@@ -15,8 +15,9 @@ from clan_battle_info import boss_names, boss_image_urls
 
 tabulate.PRESERVE_WHITESPACE = True
 
-# Cache the translation mapping
+# Cache the translation mapping and animation bank
 translation_mapping = sheets_helper.get_translation_mapping()
+animation_bank = sheets_helper.get_animation_videos(False)
 
 # Define our bot
 guild_id = [1002644143589302352, 1025780100291112960]  # Server ids
@@ -130,6 +131,76 @@ async def list_tls(
     await ctx.respond(embed=embed, ephemeral=(not show), view=view)
 
 
+# =============== Animation Cancel command =============
+@bot.slash_command(guild_ids=guild_id, description="Gets animation cancel guide video on specified character.")
+async def animation_cancel(ctx, character,
+                            show: Option(bool, "Show this to everyone", required=False, default=False)):
+    works = False
+    skillNameJP = []
+    skillVideo = []
+    print(animation_bank)
+
+    for i in range(len(animation_bank)):
+        if animation_bank[i][0].lower() == character.lower():
+            character = animation_bank[i][0]
+            skillNum = len(animation_bank[i][1])
+            for j in range(skillNum):
+                works = True
+                skill_data = str(animation_bank[i][1][j]).split(" ")
+                
+                if len(skill_data) > 2: 
+                    skillNameJP.append(f"{' '.join(skill_data[:-2])} - {skill_data[len(skill_data) - 2]}".strip())
+                else:
+                    skillNameJP.append(f"{' '.join(skill_data[:-1])}".strip())
+                skillVideo.append(skill_data[len(skill_data) - 1].strip())
+            break
+    if not works: 
+        await ctx.respond(f'Animation cancel video with character "{character}" not found.', ephemeral=True)
+        return
+
+    embed = discord.Embed(title=f"Animation Cancel for {character}", color=0xfffeff)
+    for i in range(skillNum):
+        embed.add_field(
+            name=f"{skillNameJP[i]}",
+            value=f"{skillVideo[i]}",
+            inline=False)
+    
+    await ctx.respond(embed=embed, ephemeral=(not show))
+
+
+# =============== Show Animation Cancel Units command =============
+@bot.slash_command(guild_ids=guild_id, 
+                description="Displays all characters that have an animation cancel video available.")
+async def animation_cancel_unit_names(ctx, bad_only: Option(bool,"Show messed-up names only"),show: Option(bool, "Show this to everyone", required=False, default=False)):
+    embed = discord.Embed(title="Units With Animation Cancel", description="Unit Names With Animation Cancel", color=0xfffeff)
+    bad_names = []
+    names_bank = [i[0] for i in animation_bank]
+    
+    if bad_only:
+        for i in names_bank:
+            if not any(i in j for j in translation_mapping):
+                bad_names.append(i)
+    else: bad_names = names_bank
+    
+    if len(bad_names) == 0:
+        await ctx.respond("No characters with messed up names found.")
+    
+    bad_names = [bad_names[i:i+(len(bad_names)//3)] for i in range(0, len(bad_names), len(bad_names)//3)]
+    
+    for i in range(3):
+        if len(bad_names) == 4:
+            if len(bad_names[3]) > 1 and (i == 1): 
+                bad_names[i].append(bad_names[3][1])
+            elif i == 0: 
+                bad_names[i].append(bad_names[3][0])
+        embed.add_field(
+            name="",
+            value="\n".join(bad_names[i]),
+            inline=True)
+    
+    await ctx.respond(embed=embed, ephemeral=(not show))
+    
+    
 # =============== Reload translations from woody translation sheet =============
 @bot.slash_command(guild_ids=guild_id, description="Pulls the latest woody-grade translations")
 @commands.has_role(1025780684574433390)
@@ -179,6 +250,20 @@ async def help(ctx):
             "\nshow (Optional): Show the picked TL to everybody" +
             "\ncompact (Optional): Compact TL display - True on mobile```",
         inline=False)
+    
+    embed.add_field(
+        name="/animation_cancel - Displays animation cancel video for given character",
+        value="```character: Character you want the animation cancel videos for" + 
+            "\nshow (Optional): Show the animation cancel videos to everybody```",
+        inline=False
+    )
+    
+    embed.add_field(
+        name="/animation_cancel_unit_names - Displays all characters with an animation cancel video",
+        value="```bad_only: Display the list of characters that have a different naming convention only" +
+            "show (Optional): Show the list of units to everybody```",
+        inline=False
+    )
 
     embed.add_field(
         name="/load_tls - Makes the bot retrieve the latest udpates to TLs for a boss",
