@@ -27,10 +27,13 @@ class GetTLView(View):
         await interaction.response.edit_message(embed=previous_embed, view=self)
 
 
-def get_base_embed(timeline, mobile):
+def get_base_embed(timeline):
+    description = f'Author: {timeline.author}\nTranscriber: {timeline.transcriber}\nEV: {timeline.ev}\nST_DEV: {timeline.st_dev}\nStyle: {timeline.style}'
+    if not timeline.simple:
+        description += f'\nStatus: {timeline.status}'
     embed = discord.Embed(
         type="rich",
-        description=f'Author: {timeline.author}\nTranscriber: {timeline.transcriber}\nEV: {timeline.ev}\nST_DEV: {timeline.st_dev}\nStyle: {timeline.style}\nStatus: {timeline.status}',
+        description=description,
         color=0xffffff)
     embed.set_author(name=f'{timeline.id} - {timeline.boss_name}',
                      url='https://docs.google.com/spreadsheets/d/1Zytb-0_ln6WARlCgn3opy-lfnuUr76x83iBNpUnu5wE/edit#gid=' +
@@ -49,7 +52,7 @@ def get_base_embed(timeline, mobile):
 
 
 def get_display_embeds(timeline):
-    embeds = [get_base_embed(timeline, False)]
+    embeds = [get_base_embed(timeline)]
     embed_idx = 0
     embed_limit = 1012
     current_char = 0
@@ -111,7 +114,7 @@ def get_display_embeds(timeline):
             action_string = ''
             current_char = 0
             embed_idx += 1
-            embeds.append(get_base_embed(timeline, False))
+            embeds.append(get_base_embed(timeline))
 
         time_string += action[0] + (number_of_extra_lines + 1) * "\n"
         flex_string += flex + (number_of_extra_lines + 1) * "\n"
@@ -147,14 +150,15 @@ def get_display_embeds(timeline):
 
 def get_display_embeds_mobile(timeline):
     embed_string = ''
-    embeds = [get_base_embed(timeline, True)]
+    embeds = [get_base_embed(timeline)]
     embed_idx = 0
     embed_limit = 1000
-
     for i in range(0, len(timeline.tl_actions)):
         action = timeline.tl_actions[i]
-        action_description = action[1] if not timeline.unit_column else action[2]
-        flex = action[2] if not timeline.unit_column else action[1]
+        action_description = action[1] if timeline.simple or not timeline.unit_column else action[2]
+        flex = ''
+        if not timeline.simple:
+            flex = action[2] if not timeline.unit_column else action[1]
         #print(embed_string)
         if len(embed_string) + len(action[0]) + len(action_description) + len(flex) + 6 > embed_limit:
             embeds[embed_idx].add_field(
@@ -164,11 +168,11 @@ def get_display_embeds_mobile(timeline):
             #print("actual length: " + str(len(f"```{embed_string}```")))
             embed_string = ''
             embed_idx += 1
-            embeds.append(get_base_embed(timeline, True))
+            embeds.append(get_base_embed(timeline))
 
         if len(action[0]) + len(action_description) + len(flex) != 0:
             string_begin = f'{action[0]}: ' if len(action[0]) > 0 else ''
-            embed_string += string_begin + f'{action_description}\n' if not timeline.unit_column else string_begin + f'{flex} -> {action_description}\n'
+            embed_string += string_begin + f'{action_description}\n' if timeline.simple or not timeline.unit_column else string_begin + f'{flex} -> {action_description}\n'
 
     embeds[embed_idx].add_field(
         name="Timeline",

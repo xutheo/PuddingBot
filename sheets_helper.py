@@ -1,5 +1,5 @@
 import pygsheets
-from clan_battle_info import translation_sheet_id, sheet_id, test_sheet_id, dtier_sheet_ids
+from clan_battle_info import translation_sheet_id, sheet_id, test_sheet_id, dtier_sheet_ids, dtier_simple_sheet_id
 import re
 
 # Auth things with gsheets
@@ -57,3 +57,9 @@ def get_timelines_worksheet(boss):
     timelines_data_store = gc.open_by_key(sheet_id)
     #timelines_data_store = gc.open_by_key(test_sheet_id)
     return timelines_data_store.worksheet(property='id', value=dtier_sheet_ids[boss])
+
+def get_simple_timelines_worksheet(boss):
+    # Get the sheet that stores TLs
+    timelines_data_store = gc.open_by_key(sheet_id)
+    #timelines_data_store = gc.open_by_key(test_sheet_id)
+    return timelines_data_store.worksheet(property='id', value=dtier_simple_sheet_id)

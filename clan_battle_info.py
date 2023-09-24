@@ -21,6 +21,7 @@ dtier_sheet_ids = {
     4: "1030273266",
     5: "311078222"
 }
+dtier_simple_sheet_id = 654738836
 
 sheet_id = "1hfD-fETEseGvCr1wXu-mSRBqA3PH_tzl4Te07MTrvyI"
 test_sheet_id = "1EbefVijWoXqUyooQVrcXmI4lkS2vPTDMXkQvVvmYRQg"

@@ -36,8 +36,9 @@ async def is_allowed_channel(ctx):
 async def convert_and_translate_timeline(tl, translate=True):
     # Translate timeline using woody-grade translation technology
     timeline = (await tl.read()).decode('UTF-8')
+    timeline = unicodedata.normalize("NFKC", timeline)
     if translate:
-        timeline = translate_text(timeline)
+        timeline = await translate_text(timeline)
     return timeline
 
 
@@ -92,7 +93,7 @@ async def get_tl(
         await ctx.respond(f"A timeline with that ID does not exist!\nPlease run \"/load_tls {boss}\" if you have written {id} recently.", ephemeral=True)
         return
 
-    embeds = get_display_embeds_mobile(timeline) if mobile or compact else get_display_embeds(timeline)
+    embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds(timeline)
     view = GetTLView(embeds)
     await ctx.respond(embed=embeds[0], ephemeral=(not show), view=view if len(embeds) > 1 else None)
 
@@ -112,9 +113,10 @@ async def list_tls(
     timeline_descriptions = ''
     thumbnail_url = boss_image_urls[boss]
     boss_name = boss_names[boss]
-
+    complex_tl_description = ''
+    simple_tl_description = ''
     async def button_callback(interaction, timeline):
-        embeds = get_display_embeds_mobile(timeline) if mobile or compact else get_display_embeds(timeline)
+        embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds(timeline)
         view = GetTLView(embeds)
         await interaction.response.edit_message(embed=embeds[0], view=view if len(embeds) > 1 else None)
 
@@ -124,15 +126,27 @@ async def list_tls(
 
         button.callback = d[f'callback{id}']
         view.add_item(button)
+        if len(id) > 3:
+            simple_tl_description += f'{id}: ' + ', '.join([unit.name for unit in tl.units]) + f', EV: {tl.ev}' + '\n'
+        else:
+            complex_tl_description += f'{id}: ' + ', '.join([unit.name for unit in tl.units]) + f', EV: {tl.ev}' + '\n'
 
-        timeline_descriptions += f'{id}: ' + ', '.join([unit.name for unit in tl.units]) + f', EV: {tl.ev}' + '\n\n'
 
     embed = discord.Embed(
         type="rich",
-        description=f'{timeline_descriptions}' if len(timelines) > 0 else f'No timelines to display currently.\nPlease run \"/load_tls {boss}\" if you have written one recently.',
         color=0xffffff)
     embed.set_author(name=f'Timelines for boss {boss} - {boss_name}',
                      icon_url=f'{thumbnail_url}')
+    embed.add_field(
+        name='Manual Timelines',
+        value=f'{complex_tl_description}' if complex_tl_description else f'No manual timelines to display currently.\nPlease run \"/load_tls {boss}\" if you have written one recently.',
+        inline=False
+    )
+    embed.add_field(
+        name='Simple Timelines',
+        value=f'{simple_tl_description}' if simple_tl_description else f'No manual timelines to display currently.\nPlease run \"/load_tls {boss}\" if you have written one recently.',
+        inline=False
+    )
 
     await ctx.respond(embed=embed, ephemeral=(not show), view=view)
 
