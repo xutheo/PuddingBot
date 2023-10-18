@@ -13,6 +13,7 @@ from embed_helpers import get_display_embeds_mobile, get_display_embeds, GetTLVi
 from functools import partial
 from clan_battle_info import boss_names, boss_image_urls
 import re
+from threading import Thread
 
 tabulate.PRESERVE_WHITESPACE = True
 
@@ -345,6 +346,9 @@ async def help(ctx):
         inline=False)
 
     await ctx.respond(embed=embed, ephemeral=True)
+
+load_to_db_thread = Thread(target=Timelines.background_load_to_db)
+load_to_db_thread.start()
 
 keep_alive()
 token = json.load(open("service_account.json"))['discord_token']
