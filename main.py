@@ -14,6 +14,8 @@ from functools import partial
 from clan_battle_info import boss_names, boss_image_urls
 import re
 from threading import Thread
+from icon_bank import icon_bank
+import string
 
 tabulate.PRESERVE_WHITESPACE = True
 
@@ -22,7 +24,7 @@ translation_mapping = sheets_helper.get_translation_mapping()
 animation_bank = sheets_helper.get_animation_videos()
 
 # Define our bot
-guild_id = [1002644143589302352, 1025780100291112960]  # Server ids
+guild_id = [1002644143589302352, 1025780100291112960, 1166119511376793661]  # Server ids
 channel_id = [1067620591038889995, 1141149506021367849, 
             1099083593222983700, 1102872644413571103, 
             1102872692178309131, 1102872715473457224]  # Channel ids
@@ -114,8 +116,8 @@ async def list_tls(
     timeline_descriptions = ''
     thumbnail_url = boss_image_urls[boss]
     boss_name = boss_names[boss]
-    complex_tl_description = ''
-    simple_tl_description = ''
+    simple_tl_descriptions = []
+    complex_tl_descriptions = []
     async def button_callback(interaction, timeline):
         embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds(timeline)
         view = GetTLView(embeds)
@@ -127,10 +129,24 @@ async def list_tls(
 
         button.callback = d[f'callback{id}']
         view.add_item(button)
+        unit_display = []
+        for unit in tl.units:
+            re_unit = re.sub('\\W+', '', unit.name).lower()
+            if re_unit in icon_bank:
+                unit_display.append(icon_bank[re_unit])
+            else:
+                unit_display.append(unit.name + ',')
         if len(id) > 3:
-            simple_tl_description += f'{id}: ' + ', '.join([unit.name for unit in tl.units]) + f', EV: {tl.ev}' + '\n'
+            simple_tl_description = (f'{id}: ' +
+                                     ' '.join(unit_display) +
+                                     f' EV: {tl.ev.replace("*","")}' + '\n')
+            simple_tl_descriptions.append(simple_tl_description)
+
         else:
-            complex_tl_description += f'{id}: ' + ', '.join([unit.name for unit in tl.units]) + f', EV: {tl.ev}' + '\n'
+            complex_tl_description = (f'{id}: ' +
+                                      ' '.join(unit_display) +
+                                      f' EV: {tl.ev.replace("*","")}' + '\n')
+            complex_tl_descriptions.append(complex_tl_description)
 
 
     embed = discord.Embed(
@@ -138,18 +154,54 @@ async def list_tls(
         color=0xffffff)
     embed.set_author(name=f'Timelines for boss {boss} - {boss_name}',
                      icon_url=f'{thumbnail_url}')
-    embed.add_field(
-        name='Manual Timelines',
-        value=f'{complex_tl_description}' if complex_tl_description else f'No manual timelines to display currently.\nPlease run \"/load_tls {boss}\" if you have written one recently.',
-        inline=False
-    )
-    embed.add_field(
-        name='Simple Timelines',
-        value=f'{simple_tl_description}' if simple_tl_description else f'No manual timelines to display currently.\nPlease run \"/load_tls {boss}\" if you have written one recently.',
-        inline=False
-    )
+    display_helper(embed, complex_tl_descriptions, True, boss)
+    display_helper(embed, simple_tl_descriptions, False, boss)
 
     await ctx.respond(embed=embed, ephemeral=(not show), view=view)
+
+
+def display_helper(embed, tl_descriptions, complex, boss):
+    counter = 0
+    page = 0
+    value = ''
+    for tl in tl_descriptions:
+        value += tl
+        counter += 1
+        if counter == 5:
+            if page == 0:
+                embed.add_field(
+                    name='Manual Timelines' if complex else 'Simple Timelines',
+                    value=value,
+                    inline=False
+                )
+                page += 1
+            else:
+                embed.add_field(
+                    name='',
+                    value=value,
+                    inline=False
+                )
+            counter = 0
+            value = ''
+    if page == 0 and counter == 0:
+        embed.add_field(
+            name='Manual Timelines' if complex else 'Simple Timelines',
+            value=f'No manual timelines to display currently.\nPlease run \"/load_tls {boss}\" if you have written one recently.',
+            inline=False
+        )
+    elif page == 0 and counter > 0:
+        embed.add_field(
+            name='Manual Timelines' if complex else 'Simple Timelines',
+            value=value,
+            inline=False
+        )
+    elif counter > 0:
+        embed.add_field(
+            name='',
+            value=value,
+            inline=False
+        )
+
 
 
 # =============== Animation Cancel command =============
@@ -277,8 +329,10 @@ async def animation_cancel_unit_names(ctx,show: Option(bool, "Show this to every
 @commands.has_role(1025780684574433390)
 async def update_vocab_bank(ctx):
     global translation_mapping
+    global animation_bank
     await ctx.defer()
     translation_mapping = sheets_helper.get_translation_mapping()
+    animation_bank = sheets_helper.get_animation_videos()
     await ctx.respond("Retrieved the latest woody-grade translations!", ephemeral=True)
 
 
@@ -288,14 +342,19 @@ async def load_tls(ctx, boss):
     Timelines.load_to_db(int(boss))
     await ctx.respond(f"Loaded TLs for boss: {boss}", ephemeral=True)
 
-'''
-# =============== Temporary Channel Access Command (WIP) =============
-@bot.slash_command(guild_ids=guild_id, description="Enables bot commands to be used in specified channel **TEMPORARILY**")
-@commands.has_role(1025780684574433390)
-async def add_temp_channel(ctx, channel: discord.TextChannel):
-    channel_id.append(channel.id)
-    await ctx.respond(f"{channel} with channel ID {channel.id} has been temporarily granted bot access.", ephemeral=False)
-'''
+
+@bot.slash_command(description="test emojis")
+async def test(ctx, boss):
+    embed = discord.Embed(
+        type="rich",
+        color=0xffffff)
+    embed.add_field(
+        name='Test emojis',
+        value='<:Ameth:1166088273727344761>',
+        inline=False
+    )
+    await ctx.respond(embed=embed)
+
 
 # =============== Help command =============
 @bot.slash_command(guild_ids=guild_id, description="Get a description of all commands")
