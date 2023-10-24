@@ -14,14 +14,15 @@ from functools import partial
 from clan_battle_info import boss_names, boss_image_urls
 import re
 from threading import Thread
-from icon_bank import icon_bank
-import string
+from icon_bank import icon_bank, clean_text
+import difflib
 
 tabulate.PRESERVE_WHITESPACE = True
 
 # Cache the translation mapping and animation bank
 translation_mapping = sheets_helper.get_translation_mapping()
 animation_bank = sheets_helper.get_animation_videos()
+names_bank = sheets_helper.get_animation_videos_names_bank()
 
 # Define our bot
 guild_id = [1002644143589302352, 1025780100291112960, 1166119511376793661]  # Server ids
@@ -85,11 +86,12 @@ async def translate_tl(
 async def get_tl(
         ctx,
         id,
-        show: Option(bool, "Show this timeline to everyone", required=False, default=False),
-        compact: Option(bool, "Show a compact version of the TL", required=False, default=False)):
+        show: Option(bool, "Show this timeline to everyone", required=False, default=False)):
+        #compact: Option(bool, "Show a compact version of the TL", required=False, default=False)):
     boss = int(id[1])
     mobile = ctx.author.is_on_mobile()
     print(mobile)
+    compact = True
 
     timeline = Timelines.get_from_db(boss, id)
     if timeline is None:
@@ -106,10 +108,10 @@ async def get_tl(
 async def list_tls(
         ctx,
         boss: Option(int, "1 - 5", min_value=1, max_value=5),
-        show: Option(bool, "Show this timeline to everyone", required=False, default=False),
-        compact: Option(bool, "Show a compact version of the TL", required=False, default=False)):
+        show: Option(bool, "Show this timeline to everyone", required=False, default=False)):
+        #compact: Option(bool, "Show a compact version of the TL", required=False, default=False)):
     mobile = ctx.author.is_on_mobile()
-
+    compact = True
     timelines = Timelines.get_single_boss_timelines_from_db(boss)
 
     view = View()
@@ -131,7 +133,7 @@ async def list_tls(
         view.add_item(button)
         unit_display = []
         for unit in tl.units:
-            re_unit = re.sub('\\W+', '', unit.name).lower()
+            re_unit = clean_text(unit.name)
             if re_unit in icon_bank:
                 unit_display.append(icon_bank[re_unit])
             else:
@@ -211,11 +213,13 @@ async def animation_cancel(
         character,
         show: Option(bool, "Show this to everyone", required=False, default=False)):
 
-    if character.strip().lower() not in animation_bank:
+    character_cleaned = clean_text(character)
+    closest_matches = difflib.get_close_matches(character_cleaned, names_bank.keys(), n=1)
+    if len(closest_matches) == 0 or closest_matches[0] not in animation_bank:
         await ctx.respond(f'Animation cancel video with character "{character}" not found.', ephemeral=True)
         return
+    closest_match = closest_matches[0]
 
-    print(animation_bank)
     '''
     for i in range(len(animation_bank)):
         if animation_bank[i][0].lower() == character.lower():
@@ -233,8 +237,16 @@ async def animation_cancel(
             break
     '''
 
-    embed = discord.Embed(title=f"Animation Cancel for {character}", color=0xfffeff)
-    animations = animation_bank[character.strip().lower()]
+    character = names_bank[closest_match]
+    if closest_match in icon_bank:
+        embed = discord.Embed(
+            title=f"{icon_bank[closest_match]} Animation Cancel for {character} {icon_bank[closest_match]}",
+            color=0xfffeff
+        )
+    else:
+        embed = discord.Embed(title=f"Animation Cancel for {character}", color=0xfffeff)
+
+    animations = animation_bank[closest_match]
     for animation in animations:
         split_idx = animation.find('https')
         youtube_url = animation[split_idx:]
@@ -333,27 +345,15 @@ async def update_vocab_bank(ctx):
     await ctx.defer()
     translation_mapping = sheets_helper.get_translation_mapping()
     animation_bank = sheets_helper.get_animation_videos()
+    names_bank = sheets_helper.get_animation_videos_names_bank()
     await ctx.respond("Retrieved the latest woody-grade translations!", ephemeral=True)
 
 
 @bot.slash_command(description="Load TLs")
 async def load_tls(ctx, boss):
     await ctx.defer()
-    Timelines.load_to_db(int(boss))
+    Timelines.load_to_db(int(boss), clear=True)
     await ctx.respond(f"Loaded TLs for boss: {boss}", ephemeral=True)
-
-
-@bot.slash_command(description="test emojis")
-async def test(ctx, boss):
-    embed = discord.Embed(
-        type="rich",
-        color=0xffffff)
-    embed.add_field(
-        name='Test emojis',
-        value='<:Ameth:1166088273727344761>',
-        inline=False
-    )
-    await ctx.respond(embed=embed)
 
 
 # =============== Help command =============
@@ -370,15 +370,13 @@ async def help(ctx):
     embed.add_field(
         name="/get_tl - Gets the target TL with specified ID",
         value="```id: ID of the timeline; ex.'D10'" +
-            "\nshow (Optional): Show this TL to everybody" +
-            "\ncompact (Optional): Compact TL display - True on mobile```",
+            "\nshow (Optional): Show this TL to everybody```",
         inline=False)
 
     embed.add_field(
         name="/list_tls - Gets all Tls for a given boss",
         value="```boss: Boss that you want the TL from (1-5)" +
-            "\nshow (Optional): Show the picked TL to everybody" +
-            "\ncompact (Optional): Compact TL display - True on mobile```",
+            "\nshow (Optional): Show the picked TL to everybody```",
         inline=False)
     
     embed.add_field(
@@ -406,8 +404,8 @@ async def help(ctx):
 
     await ctx.respond(embed=embed, ephemeral=True)
 
-load_to_db_thread = Thread(target=Timelines.background_load_to_db)
-load_to_db_thread.start()
+#load_to_db_thread = Thread(target=Timelines.background_load_to_db)
+#load_to_db_thread.start()
 
 keep_alive()
 token = json.load(open("service_account.json"))['discord_token']

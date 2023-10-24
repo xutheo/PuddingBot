@@ -1,6 +1,6 @@
 import pygsheets
 from clan_battle_info import translation_sheet_id, sheet_id, test_sheet_id, dtier_sheet_ids, dtier_simple_sheet_id
-import re
+from icon_bank import clean_text
 
 # Auth things with gsheets
 path = 'service_account.json'
@@ -32,25 +32,23 @@ def get_animation_videos():
 
     for idx, row in enumerate(all_values):
         if row[4].strip() and row[5].strip():
-            mapping[row[4].strip().lower()] = row[5].strip().split(";;;")
+            mapping[clean_text(row[4])] = row[5].strip().split(";;;")
             skills_raw.append(row[5].strip())
 
     return mapping
-'''#クウカ
-main_sheet = gc.open_by_key(translation_sheet_id)
-animation_bank = main_sheet.worksheet(property='id', value=282243922)  # input
-all_values = animation_bank.get_all_values()
 
 
-for idx, row in enumerate(all_values):
-    if idx < 160: continue
-    print(idx, row)
-    animation_bank.update_value((idx+1, 6), re.sub('-{5,}', ';;;', row[5]))'''
+def get_animation_videos_names_bank():
+    # Get animation cancel videos
+    main_sheet = gc.open_by_key(translation_sheet_id)
+    animation_bank = main_sheet.worksheet(property='id', value=282243922)  # input
+    mapping = {}
+    names_bank = [name for name in animation_bank.get_col(5) if name]
+    names_bank_cleaned = {}
+    for name in names_bank:
+        names_bank_cleaned[clean_text(name)] = name
+    return names_bank_cleaned
 
-
-
-#bank = get_animation_videos()
-#print(bank['labyrista'])
 
 def get_timelines_worksheet(boss):
     # Get the sheet that stores TLs

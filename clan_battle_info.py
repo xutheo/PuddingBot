@@ -7,23 +7,23 @@ boss_image_urls = {
 }
 
 boss_names = {
-    1: "Frost Hound",
-    2: "Land Sloth",
-    3: "Jackal Thief",
-    4: "Dark Gargoyle",
-    5: "Glutton"
+    1: "Goblin Brave",
+    2: "Rai-rai",
+    3: "Mega Lapahn",
+    4: "Sword Cobra",
+    5: "Lesathapult"
 }
 
 dtier_sheet_ids = {
-    1: "1344830706",
-    2: "1148100815",
-    3: "337535649",
-    4: "1030273266",
+    1: "1305029905",
+    2: "1699807028",
+    3: "1464210928",
+    4: "2047017564",
     5: "311078222"
 }
-dtier_simple_sheet_id = 654738836
+dtier_simple_sheet_id = 1391911131
 
-sheet_id = "1hfD-fETEseGvCr1wXu-mSRBqA3PH_tzl4Te07MTrvyI"
+sheet_id = "1cv6a_gVjrt-OREF8IMr_T3sFqB4YOjA6e1zfsoXRyRA"
 test_sheet_id = "1EbefVijWoXqUyooQVrcXmI4lkS2vPTDMXkQvVvmYRQg"
 
 translation_sheet_id = '11B6-6mmQC4XMTiSadrfKGlS_y4qSnLzfFHj1_W8XLhI'

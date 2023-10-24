@@ -1,6 +1,6 @@
 import discord
 from discord.ui import Button, View
-
+from icon_bank import icon_bank, clean_text
 
 class GetTLView(View):
     embed_idx = 0
@@ -41,11 +41,14 @@ def get_base_embed(timeline):
                      icon_url=f'{timeline.thumbnail_url}')
     unit_string = ''
     for unit in timeline.units:
-        unit_string += f'{unit.name}:LV{unit.level}/R{unit.rank}/{unit.star}⭐/UE:{unit.ue}\n'
+        unit_cleaned = clean_text(unit.name)
+        unit_string += f'{icon_bank[unit_cleaned]} ' if unit_cleaned in icon_bank else f'{unit.name}: '
+        unit_string += f'LV{unit.level} | R{unit.rank} | {unit.star}⭐ | UE: {unit.ue}\n' if unit.ue \
+            else f'LV{unit.level} | R{unit.rank} | {unit.star}⭐\n'
 
     embed.add_field(
         name="Units",
-        value=f"```{unit_string}```",
+        value=f"{unit_string}",
         inline=False
     )
     return embed

@@ -6,6 +6,7 @@ import threading
 import time
 from threading import Lock
 
+load_to_db_lock = Lock()
 sqlitedict_base_path = f"/mnt/timeline_data/test_"
 if os.environ['COMPUTERNAME'] == 'ZALTEO':
     sqlitedict_base_path = f"./mnt/timeline_data/test_"
@@ -150,7 +151,6 @@ def load_to_db(boss, clear=False):
         print(tl_data)
 
 
-load_to_db_lock = Lock()
 def load_to_db_thread(boss):
     while load_to_db_lock.locked():
         print(f"Loading is locked, trying again later for boss {boss}")

@@ -1,3 +1,10 @@
+import re
+
+
+def clean_text(text):
+    return re.sub('\\W+', '', text).lower()
+
+
 icon_bank = {
     'akinosaren': '<:akinosaren:1166119060514291823>',
     'akarin': '<:AKarin:1166116613100163182>',
@@ -5,7 +12,7 @@ icon_bank = {
     'ayori': '<:AYori:1166121461463908512>',
     'christina': '<:Christina:1166116614484271305>',
     'cayukari': '<:CAYukari:1166121462504108143>',
-    'cilya': '<:CIlya:1166116616698855514>',
+    'cillya': '<:CIlya:1166116616698855514>',
     'creditta': '<:Creditta:1166095536366030849>',
     'croche': '<:Croche:1166104808269287454>',
     'ctamaki': '<:CTamaki:1166095538169577602>',
@@ -21,6 +28,7 @@ icon_bank = {
     'lyrael': '<:Lyrael:1166116624840007710>',
     'makoto': '<:Makoto:1166116626274459670>',
     'mgmonika': '<:MGMonika:1166121468363550842>',
+    'misora': '<:Misora:1166466395958153226>',
     'monika': '<:Monika:1166104817438031914>',
     'muimi': '<:Muimi:1166104819379994644>',
     'neneka': '<:Neneka:1166104821393281124>',
@@ -36,6 +44,8 @@ icon_bank = {
     'pkyaru': '<:PKyaru:1166116673460383754>',
     'prei': '<:PRei:1166121469651210261>',
     'sakino': '<:SAkino:1166104829458915399>',
+    'saruka': '<:SaRuka:1166466397241622648>',
+    'sasaren': '<:SaSaren:1166466399129063546>',
     'schika': '<:SChika:1166106847195955250>',
     'sfyuni': '<:SFYuni:1166116690489262131> ',
     'shefi': '<:Shefi:1166116691936292904>',
@@ -45,11 +55,14 @@ icon_bank = {
     'snozomi': '<:SNozomi:1166116694431907982>',
     'sranpha': '<:SRanpha:1166104837285478551>',
     'srei': '<:SRei:1166116697162395699>',
+    'ssaren': '<:SSaren:1166466401003900998>',
     'sshinobu': '<:SShinobu:1166116698848514128>',
     'ssuzume': '<:SSuzume:1166105290467459194>',
+    'stamaki': '<:STamaki:1166466403554054174>',
     'stkurumi': '<:STKurumi:1166116701532860586>',
     'syui': '<:SYui:1166121471085658282>',
     'syukari': '<:SYukari:1166105259421208709>',
+    'tamaki': '<:Tamaki:1166466404908793856>',
     'tomo': '<:Tomo:1166116702929567784>',
     'tskyaru': '<:TSKyaru:1166116704116555817>',
     'vampy': '<:Vampy:1166121473065365596>',
