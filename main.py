@@ -9,13 +9,14 @@ import json
 import unicodedata
 import os
 from discord.ui import Button, View
-from embed_helpers import get_display_embeds_mobile, get_display_embeds, GetTLView
+from embed_helpers import get_display_embeds_mobile, get_display_embeds, GetTLView, get_display_embeds2
 from functools import partial
 from clan_battle_info import boss_names, boss_image_urls
 import re
 from threading import Thread
 from icon_bank import icon_bank, clean_text
 import difflib
+from Homework import get_homework
 
 tabulate.PRESERVE_WHITESPACE = True
 
@@ -86,19 +87,19 @@ async def translate_tl(
 async def get_tl(
         ctx,
         id,
-        show: Option(bool, "Show this timeline to everyone", required=False, default=False)):
-        #compact: Option(bool, "Show a compact version of the TL", required=False, default=False)):
+        show: Option(bool, "Show this timeline to everyone", required=False, default=False),
+        compact: Option(bool, "Show a compact version of the TL", required=False, default=False)):
     boss = int(id[1])
     mobile = ctx.author.is_on_mobile()
     print(mobile)
-    compact = True
+    #compact = False
 
     timeline = Timelines.get_from_db(boss, id)
     if timeline is None:
         await ctx.respond(f"A timeline with that ID does not exist!\nPlease run \"/load_tls {boss}\" if you have written {id} recently.", ephemeral=True)
         return
 
-    embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds(timeline)
+    embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds2(timeline)
     view = GetTLView(embeds)
     await ctx.respond(embed=embeds[0], ephemeral=(not show), view=view if len(embeds) > 1 else None)
 
@@ -108,10 +109,9 @@ async def get_tl(
 async def list_tls(
         ctx,
         boss: Option(int, "1 - 5", min_value=1, max_value=5),
-        show: Option(bool, "Show this timeline to everyone", required=False, default=False)):
-        #compact: Option(bool, "Show a compact version of the TL", required=False, default=False)):
+        show: Option(bool, "Show this timeline to everyone", required=False, default=False),
+        compact: Option(bool, "Show a compact version of the TL", required=False, default=False)):
     mobile = ctx.author.is_on_mobile()
-    compact = True
     timelines = Timelines.get_single_boss_timelines_from_db(boss)
 
     view = View()
@@ -121,7 +121,7 @@ async def list_tls(
     simple_tl_descriptions = []
     complex_tl_descriptions = []
     async def button_callback(interaction, timeline):
-        embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds(timeline)
+        embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds2(timeline)
         view = GetTLView(embeds)
         await interaction.response.edit_message(embed=embeds[0], view=view if len(embeds) > 1 else None)
 
@@ -268,7 +268,8 @@ async def animation_cancel(
 async def animation_cancel_unit_names(ctx,show: Option(bool, "Show this to everyone", required=False, default=False)):
     embed = discord.Embed(
         title="Unit names with animation cancel",
-        description="These names can be used with the /animation_cancel command and are case-insensitive",
+        description="These names and nicknames can be used with the /animation_cancel command." + \
+                    "For example, /animation_cancel neneka and /animation_cancel nnk will give the videos for neneka.",
         color=0xfffeff
     )
     results = []
@@ -334,8 +335,63 @@ async def animation_cancel_unit_names(ctx,show: Option(bool, "Show this to every
 
     await ctx.respond(embed=embed, ephemeral=(not show))'''
 
-    
-    
+
+# =============== Homework Command =============
+@bot.slash_command(guild_ids=guild_id, description="Evaluates homework for the clan")
+async def evaluate_homework(ctx):
+    await ctx.defer()
+    embed = discord.Embed(
+        title="Users with bad homework",
+        description="Shame these slackers!",
+        color=0xfffeff
+    )
+    homework = get_homework()
+    display_string = ''
+    any_conflicts = False
+    for hw in homework:
+        print(f'{hw.user}\n{hw.comp1}{hw.comp2}{hw.comp3}{hw.evaluate()}')
+        hw_string = ''
+        conflict = False
+        conflicts = hw.evaluate()
+        for i in range(3):
+            if conflicts.length_conflicts[i]:
+                hw_string += f'Team {i+1} missing units!\n'
+                conflict = True
+            if conflicts.tl_code_conflicts[i]:
+                hw_string += f'Team {i+1} missing TL Code!\n'
+                conflict = True
+            if conflicts.ev_conflicts[i]:
+                hw_string += f'Team {i+1} missing EV!\n'
+                conflict = True
+            if conflicts.borrow_conflicts[i]:
+                hw_string += f'Team {i+1} missing borrow!\n'
+                conflict = True
+            if conflicts.unit_conflicts[i]:
+                unit = clean_text(conflicts.unit_conflicts[i])
+                if unit in icon_bank:
+                    unit = icon_bank[unit]
+                if i == 2:
+                    hw_string += f'{unit} in Teams 1 and 3\n'
+                else:
+                    hw_string += f'{unit} in Teams {(i + 1)%3} and {(i + 2)%3 if i + 2 != 3 else 3}\n'
+                conflict = True
+        if conflict:
+            any_conflicts = True
+            embed.add_field(
+                name=hw.user,
+                value=hw_string,
+                inline=True
+            )
+
+    if not any_conflicts:
+        embed = discord.Embed(
+            title="All users have completed their homework!  We are CB ready!",
+            description="",
+            color=0xfffeff
+        )
+    await ctx.respond(embed=embed)
+
+
 # =============== Reload translations from woody translation sheet =============
 @bot.slash_command(guild_ids=guild_id, description="Pulls the latest woody-grade translations")
 @commands.has_role(1025780684574433390)

@@ -27,13 +27,13 @@ class GetTLView(View):
         await interaction.response.edit_message(embed=previous_embed, view=self)
 
 
-def get_base_embed(timeline):
-    description = f'Author: {timeline.author}\nTranscriber: {timeline.transcriber}\nEV: {timeline.ev}\nST_DEV: {timeline.st_dev}\nStyle: {timeline.style}'
-    if not timeline.simple:
-        description += f'\nStatus: {timeline.status}'
+def get_base_embed(timeline, include_units=True):
+    description = f'Author: {timeline.author}\nTranscriber: {timeline.transcriber}\nEV: {timeline.ev}, ST_DEV: {timeline.st_dev}\nStyle: {timeline.style}'
+    #if not timeline.simple:
+    #    description += f'\nStatus: {timeline.status}'
     embed = discord.Embed(
         type="rich",
-        description=description,
+        description="",
         color=0xffffff)
     embed.set_author(name=f'{timeline.id} - {timeline.boss_name}',
                      url='https://docs.google.com/spreadsheets/d/1Zytb-0_ln6WARlCgn3opy-lfnuUr76x83iBNpUnu5wE/edit#gid=' +
@@ -46,11 +46,22 @@ def get_base_embed(timeline):
         unit_string += f'LV{unit.level} | R{unit.rank} | {unit.star}⭐ | UE: {unit.ue}\n' if unit.ue \
             else f'LV{unit.level} | R{unit.rank} | {unit.star}⭐\n'
 
-    embed.add_field(
-        name="Units",
-        value=f"{unit_string}",
-        inline=False
-    )
+    if include_units:
+        embed.add_field(
+            name="Units",
+            value=f"{unit_string}",
+            inline=True
+        )
+        embed.add_field(
+            name="Description",
+            value=f"{description}",
+            inline=True
+        )
+        embed.add_field(
+            name='',
+            value='',
+            inline=False
+        )
     return embed
 
 
@@ -150,6 +161,156 @@ def get_display_embeds(timeline):
         embeds[i].set_footer(text=f'Page {i + 1}/{len(embeds)}')
     return embeds
 
+def get_display_embeds2(timeline):
+    embed_string = ''
+    embeds = [get_base_embed(timeline)]
+    embed_idx = 0
+    embed_limit = 1000
+    action_string = ''
+    time = ''
+    field_limit = 25
+    fields = 0
+    first_field = True
+    zipped_status = zip(timeline.units, timeline.starting_set_status[1:6])
+    auto_state = timeline.starting_set_status[7]
+    statuses = []
+    unit_statuses = []
+    for status in zipped_status:
+        unit_statuses.append(icon_bank[clean_text(status[0].name)])
+        statuses.append(f'{icon_bank["greeno"] if status[1] == "SET" else ":x:"}')
+    embeds[embed_idx].add_field(
+        name='Initial Set Status',
+        value=f'{"".join(unit_statuses)}\n{"".join(statuses)}\nAUTO: {auto_state}',
+        inline=False)
+    for i in range(0, len(timeline.tl_actions)):
+        if i == 0:
+            fields = 3
+            action = timeline.tl_actions[i]
+            time = action[0]
+            action_description = action[1] if timeline.simple or not timeline.unit_column else action[2]
+            flex = ''
+            if not timeline.simple:
+                flex = action[2] if not timeline.unit_column else action[1]
+            if action_description and flex:
+                action_string += f'{action_description}\n' if timeline.simple or not timeline.unit_column else f'{flex} -> {action_description}\n'
+            elif flex and not action_description:
+                action_string += f'' if timeline.simple or not timeline.unit_column else f'{flex}\n'
+            continue
+
+        action = timeline.tl_actions[i]
+        new_time = action[0]
+
+        # print(embed_string)
+        if new_time:
+            if len(time) > 8 or 'route' in time.lower():
+                embeds[embed_idx].add_field(
+                    name=f'**# {time} #**',
+                    value='',
+                    inline=False)
+                fields += 1
+                first_field = True
+            else:
+                if first_field:
+                    embeds[embed_idx].add_field(
+                        name="Time",
+                        value=f"```{time}```",
+                        inline=True)
+                    embeds[embed_idx].add_field(
+                        name="Action",
+                        value=f"```{action_string}```",
+                        inline=True)
+                    embeds[embed_idx].add_field(
+                        name='',
+                        value='',
+                        inline=True)
+                    action_string = ''
+                    first_field = False
+                    fields += 3
+                else:
+                    embeds[embed_idx].add_field(
+                        name='',
+                        value=f"```{time}```",
+                        inline=True)
+                    embeds[embed_idx].add_field(
+                        name='',
+                        value=f"```{action_string}```",
+                        inline=True)
+                    embeds[embed_idx].add_field(
+                        name='',
+                        value='',
+                        inline=True)
+                    action_string = ''
+                    fields += 3
+            time = new_time
+            if fields + 3 > field_limit:
+                embeds.append(get_base_embed(timeline, include_units=False))
+                first_field = True
+                embed_idx += 1
+                fields = 0
+
+
+        action_description = action[1] if timeline.simple or not timeline.unit_column else action[2]
+        flex = ''
+        if not timeline.simple:
+            flex = action[2] if not timeline.unit_column else action[1]
+
+        if action_description and flex:
+            action_string += f'{action_description}\n' if timeline.simple or not timeline.unit_column else f'{flex} -> {action_description}\n'
+        elif flex and not action_description:
+            action_string += f'' if timeline.simple or not timeline.unit_column else f'{flex}\n'
+
+        '''if len(embed_string) + len(action[0]) + len(action_description) + len(flex) + 6 > embed_limit:
+            embeds[embed_idx].add_field(
+                name="Timeline",
+                value=f"```{embed_string}```",
+                inline=True)
+            # print("actual length: " + str(len(f"```{embed_string}```")))
+            embed_string = ''
+            embed_idx += 1
+            embeds.append(get_base_embed(timeline))
+
+        if len(time) + len(action_description) + len(flex) != 0:
+            string_begin = f'{time}: ' if len(time) > 0 else ''
+            embed_string += string_begin + f'{action_description}\n' if timeline.simple or not timeline.unit_column else string_begin + f'{flex} -> {action_description}\n'
+        '''
+
+    '''embeds[embed_idx].add_field(
+        name="Timeline",
+        value=f"```{embed_string}```",
+        inline=True)'''
+
+    if first_field:
+        embeds[embed_idx].add_field(
+            name="Time",
+            value=f"```{time}```",
+            inline=True)
+        embeds[embed_idx].add_field(
+            name="Action",
+            value=f"```{action_string}```",
+            inline=True)
+        embeds[embed_idx].add_field(
+            name='',
+            value='',
+            inline=True)
+        action_string = ''
+        first_field = False
+    else:
+        embeds[embed_idx].add_field(
+            name='',
+            value=f"```{time}```",
+            inline=True)
+        embeds[embed_idx].add_field(
+            name='',
+            value=f"```{action_string}```",
+            inline=True)
+        embeds[embed_idx].add_field(
+            name='',
+            value='',
+            inline=True)
+        action_string = ''
+    for i in range(0, len(embeds)):
+        embeds[i].set_footer(text=f'Page {i + 1}/{len(embeds)}')
+    return embeds
 
 def get_display_embeds_mobile(timeline):
     embed_string = ''

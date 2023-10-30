@@ -16,6 +16,7 @@ icon_bank = {
     'creditta': '<:Creditta:1166095536366030849>',
     'croche': '<:Croche:1166104808269287454>',
     'ctamaki': '<:CTamaki:1166095538169577602>',
+    'cyukari': '<:CYukari:1168051732127957063>',
     'djeeta': '<:Djeeta:1166116618049441873>',
     'eayane': '<:EAyane:1166116619781681172>',
     'emaho': '<:EMaho:1166121464341200961>',
@@ -39,6 +40,7 @@ icon_bank = {
     'nyshefi': '<:NYShefi:1166116631710273616>',
     'olpecorine': '<:OLPecorine:1166116662869774356>',
     'oyuki': '<:OYuki:1166116635724226691>',
+    'phiyori': '<:PHiyori:1168051401360941087>',
     'pianna': '<:PIAnna:1166119061827096729>',
     'pkokkoro': '<:PKokkoro:1166119064096219236>',
     'pkyaru': '<:PKyaru:1166116673460383754>',
@@ -69,7 +71,11 @@ icon_bank = {
     'vikala': '<:Vikala:1166116705962033173>',
     'wdjeeta': '<:WDjeeta:1166116707564269648>',
     'wmatsuri': '<:WMatsuri:1166121474290098206>',
+    'xakari': '<:XAkari:1168051403529396265>',
     'xmiyako': '<:XMiyako:1166121475519037490>',
     'xjun': '<:XJun:1166116708835147859>',
     'xyori': '<:XYori:1166116711955701790>',
+    'xyukari': '<:XYukari:1166542269415952475>',
+
+    'greeno': '<:greeno:1168060002636935168>'
 }
