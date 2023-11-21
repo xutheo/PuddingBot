@@ -87,6 +87,7 @@ async def translate_tl(
 async def get_tl(
         ctx,
         id,
+        ot: Option(int, "Input your ot timer in seconds.", required=False, default=False),
         show: Option(bool, "Show this timeline to everyone", required=False, default=False),
         compact: Option(bool, "Show a compact version of the TL", required=False, default=False)):
     boss = int(id[1])
@@ -99,7 +100,7 @@ async def get_tl(
         await ctx.respond(f"A timeline with that ID does not exist!\nPlease run \"/load_tls {boss}\" if you have written {id} recently.", ephemeral=True)
         return
 
-    embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds2(timeline)
+    embeds = get_display_embeds_mobile(timeline, ot) if mobile or compact or timeline.simple else get_display_embeds2(timeline, ot)
     view = GetTLView(embeds)
     await ctx.respond(embed=embeds[0], ephemeral=(not show), view=view if len(embeds) > 1 else None)
 
@@ -121,7 +122,7 @@ async def list_tls(
     simple_tl_descriptions = []
     complex_tl_descriptions = []
     async def button_callback(interaction, timeline):
-        embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds2(timeline)
+        embeds = get_display_embeds_mobile(timeline, 90) if mobile or compact or timeline.simple else get_display_embeds2(timeline, 90)
         view = GetTLView(embeds)
         await interaction.response.edit_message(embed=embeds[0], view=view if len(embeds) > 1 else None)
 
@@ -426,7 +427,9 @@ async def help(ctx):
     embed.add_field(
         name="/get_tl - Gets the target TL with specified ID",
         value="```id: ID of the timeline; ex.'D10'" +
-            "\nshow (Optional): Show this TL to everybody```",
+            "\not (Optional): Time in seconds of your OT" +
+            "\nshow (Optional): Show this TL to everybody" +
+            "\ncompact (Optional): Compacts the display```",
         inline=False)
 
     embed.add_field(
@@ -455,6 +458,11 @@ async def help(ctx):
 
     embed.add_field(
         name="/update_vocab_bank - Refreshes woody-grade translations. (ADMIN ONLY)",
+        value="",
+        inline=False)
+
+    embed.add_field(
+        name="/evaluate_homework - Shames people who haven't done homework.",
         value="",
         inline=False)
 

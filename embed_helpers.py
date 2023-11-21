@@ -161,7 +161,7 @@ def get_display_embeds(timeline):
         embeds[i].set_footer(text=f'Page {i + 1}/{len(embeds)}')
     return embeds
 
-def get_display_embeds2(timeline):
+def get_display_embeds2(timeline, ot):
     embed_string = ''
     embeds = [get_base_embed(timeline)]
     embed_idx = 0
@@ -187,6 +187,10 @@ def get_display_embeds2(timeline):
             fields = 3
             action = timeline.tl_actions[i]
             time = action[0]
+            time = convert_time_with_ot(ot, time)
+            if time == "-1":
+                time = ''
+                break
             action_description = action[1] if timeline.simple or not timeline.unit_column else action[2]
             flex = ''
             if not timeline.simple:
@@ -199,7 +203,10 @@ def get_display_embeds2(timeline):
 
         action = timeline.tl_actions[i]
         new_time = action[0]
-
+        new_time = convert_time_with_ot(ot, new_time)
+        if new_time == "-1":
+            new_time = ''
+            break
         # print(embed_string)
         if new_time:
             if len(time) > 8 or 'route' in time.lower():
@@ -312,19 +319,24 @@ def get_display_embeds2(timeline):
         embeds[i].set_footer(text=f'Page {i + 1}/{len(embeds)}')
     return embeds
 
-def get_display_embeds_mobile(timeline):
+
+def get_display_embeds_mobile(timeline, ot):
     embed_string = ''
     embeds = [get_base_embed(timeline)]
     embed_idx = 0
     embed_limit = 1000
     for i in range(0, len(timeline.tl_actions)):
         action = timeline.tl_actions[i]
+        time = action[0]
+        time = convert_time_with_ot(ot, time)
+        if time == "-1":
+            break
         action_description = action[1] if timeline.simple or not timeline.unit_column else action[2]
         flex = ''
         if not timeline.simple:
             flex = action[2] if not timeline.unit_column else action[1]
         #print(embed_string)
-        if len(embed_string) + len(action[0]) + len(action_description) + len(flex) + 6 > embed_limit:
+        if len(embed_string) + len(time) + len(action_description) + len(flex) + 6 > embed_limit:
             embeds[embed_idx].add_field(
                 name="Timeline",
                 value=f"```{embed_string}```",
@@ -335,7 +347,7 @@ def get_display_embeds_mobile(timeline):
             embeds.append(get_base_embed(timeline))
 
         if len(action[0]) + len(action_description) + len(flex) != 0:
-            string_begin = f'{action[0]}: ' if len(action[0]) > 0 else ''
+            string_begin = f'{time} - ' if len(time) > 0 else ''
             embed_string += string_begin + f'{action_description}\n' if timeline.simple or not timeline.unit_column else string_begin + f'{flex} -> {action_description}\n'
 
     embeds[embed_idx].add_field(
@@ -345,3 +357,38 @@ def get_display_embeds_mobile(timeline):
     for i in range(0, len(embeds)):
         embeds[i].set_footer(text=f'Page {i + 1}/{len(embeds)}')
     return embeds
+
+
+def convert_time_to_seconds(time_string):
+    time_split = time_string.split(':')
+    time_in_seconds = 0
+    if len(time_split) == 2:
+        time_in_seconds += 60 * int(time_split[0]) + int(time_split[1])
+    else:
+        time_in_seconds += int(time_split[0])
+    return time_in_seconds
+
+
+def convert_time_to_string(time_in_seconds):
+    minutes = time_in_seconds // 60
+    seconds = time_in_seconds % 60
+    if minutes == 0:
+        return str(seconds)
+    else:
+        if seconds < 10:
+            return str(minutes) + ":0" + str(seconds)
+        else:
+            return str(minutes) + ":" + str(seconds)
+
+
+def convert_time_with_ot(ot, time):
+    if ot and len(time) > 0:
+        if ot > 90 or ot < 0:
+            ot = 90
+        offset = 90 - ot
+        time_in_seconds = convert_time_to_seconds(time)
+        if time_in_seconds - offset <= 0:
+            return "-1"
+        time = convert_time_to_string(time_in_seconds - offset)
+        return time
+    return time
