@@ -339,14 +339,15 @@ async def animation_cancel_unit_names(ctx,show: Option(bool, "Show this to every
 
 # =============== Homework Command =============
 @bot.slash_command(guild_ids=guild_id, description="Evaluates homework for the clan")
-async def evaluate_homework(ctx):
+async def evaluate_homework(ctx,
+                            chorry: Option(bool, "Evaluate for Chorry instead of Worry", required=False, default=False)):
     await ctx.defer()
     embed = discord.Embed(
         title="Users with bad homework",
         description="Shame these slackers!",
         color=0xfffeff
     )
-    homework = get_homework()
+    homework = get_homework(chorry)
     display_string = ''
     any_conflicts = False
     for hw in homework:
@@ -411,7 +412,7 @@ async def load_tls(ctx, boss):
     await ctx.defer()
     if boss == 'all':
         for i in range(1, 6):
-            print(i)
+            print(f"Loading for boss: {i}")
             Timelines.load_to_db(i, clear=True)
     else:
         Timelines.load_to_db(int(boss), clear=True)
@@ -468,7 +469,7 @@ async def help(ctx):
 
     embed.add_field(
         name="/evaluate_homework - Shames people who haven't done homework.",
-        value="",
+        value="chorry (Optional): Get evaluation for chorry instead of worry",
         inline=False)
 
     await ctx.respond(embed=embed, ephemeral=True)

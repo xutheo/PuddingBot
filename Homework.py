@@ -111,8 +111,8 @@ def construct_homework_grid(i, j, values):
     return user, grid
 
 
-def get_homework():
-    hw_wksht = get_homework_worksheet()
+def get_homework(chorry=False):
+    hw_wksht = get_homework_worksheet(chorry)
     values = hw_wksht.get_all_values()
 
     homework = []
@@ -123,5 +123,3 @@ def get_homework():
                 homework.append(Homework(user, grid))
 
     return homework
-
-get_homework()
