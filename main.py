@@ -409,7 +409,12 @@ async def update_vocab_bank(ctx):
 @bot.slash_command(description="Load TLs")
 async def load_tls(ctx, boss):
     await ctx.defer()
-    Timelines.load_to_db(int(boss), clear=True)
+    if boss == 'all':
+        for i in range(1, 6):
+            print(i)
+            Timelines.load_to_db(i, clear=True)
+    else:
+        Timelines.load_to_db(int(boss), clear=True)
     await ctx.respond(f"Loaded TLs for boss: {boss}", ephemeral=True)
 
 

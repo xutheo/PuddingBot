@@ -1,17 +1,17 @@
 boss_image_urls = {
-    1: "https://redive.estertion.win/icon/unit/305700.webp",
-    2: "https://redive.estertion.win/icon/unit/304600.webp",
-    3: "https://redive.estertion.win/icon/unit/305100.webp",
-    4: "https://redive.estertion.win/icon/unit/313400.webp",
-    5: "https://redive.estertion.win/icon/unit/300200.webp"
+    1: "https://redive.estertion.win/icon/unit/302100.webp",
+    2: "https://redive.estertion.win/icon/unit/309000.webp",
+    3: "https://redive.estertion.win/icon/unit/309200.webp",
+    4: "https://redive.estertion.win/icon/unit/306900.webp",
+    5: "https://redive.estertion.win/icon/unit/301800.webp"
 }
 
 boss_names = {
-    1: "Goblin Brave",
-    2: "Rai-rai",
-    3: "Mega Lapahn",
-    4: "Sword Cobra",
-    5: "Lesathapult"
+    1: "Wyvern",
+    2: "Land Sloth",
+    3: "Bird",
+    4: "Tri Rocker",
+    5: "Sagitarius"
 }
 
 dtier_sheet_ids = {
@@ -23,10 +23,11 @@ dtier_sheet_ids = {
 }
 dtier_simple_sheet_id = 1391911131
 
-sheet_id = "1cv6a_gVjrt-OREF8IMr_T3sFqB4YOjA6e1zfsoXRyRA"
-test_sheet_id = "1EbefVijWoXqUyooQVrcXmI4lkS2vPTDMXkQvVvmYRQg"
+sheet_id = "1maL-3xDhKJnX0ULmpoYpvFvcRsERYKEkbeQHJBSTVRo"
+test_sheet_id = "1maL-3xDhKJnX0ULmpoYpvFvcRsERYKEkbeQHJBSTVRo"
 
 translation_sheet_id = '11B6-6mmQC4XMTiSadrfKGlS_y4qSnLzfFHj1_W8XLhI'
 
 homework_sheet_id = '1_SyP7RcQsOh0HrDpDOdB5bPVzLGIAaMZAdgZuGyO5gs'
+chorry_homework_sheet_id = ''
 homework_sheet_gid = '574547770'
