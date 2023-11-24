@@ -28,6 +28,6 @@ test_sheet_id = "1maL-3xDhKJnX0ULmpoYpvFvcRsERYKEkbeQHJBSTVRo"
 
 translation_sheet_id = '11B6-6mmQC4XMTiSadrfKGlS_y4qSnLzfFHj1_W8XLhI'
 
-homework_sheet_id = '1_SyP7RcQsOh0HrDpDOdB5bPVzLGIAaMZAdgZuGyO5gs'
-chorry_homework_sheet_id = '1KD0WhzJLtSdEawTrzmcc7tIeayZJUpSVnQN4DzXSeM8'
+homework_sheet_id = '1ZQwMjCIqnvqX-B6aWYAs1K384VkFU-SaTPefCslWqSQ'
+chorry_homework_sheet_id = '1tyQQUn3cc05vIu58NanTvSzQG27LhisZcuVNiP-aJOY'
 homework_sheet_gid = '574547770'

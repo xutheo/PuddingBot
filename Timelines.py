@@ -31,6 +31,10 @@ class Timeline:
 
     def __init__(self, tl_data, boss, tl_cell_tuple, simple):
         if not simple:
+            while tl_data[self.TL_COL_LABELS_ROW][0] != 'Time':
+                self.TL_COL_LABELS_ROW += 1
+                self.TL_START_ROW += 1
+                self.TL_STARTING_SET_ROW += 1
             self.id = tl_data[0][0]
             self.sheet_id = dtier_sheet_ids[boss]
             self.author = "" if not tl_data[0][1] else \
@@ -131,7 +135,14 @@ def load_to_db(boss, clear=False):
     wk_sht = sheets_helper.get_timelines_worksheet(boss)
     tl_start = wk_sht.find('Original Author: [^_]', searchByRegex=True)
     tl_end = wk_sht.find('Extra Notes')
-    zipped_timelines = zip(tl_start, tl_end)
+    tl_start_idx = 0
+    tl_end_idx = 0
+    zipped_timelines = []
+    for start in tl_start:
+        while tl_end[tl_end_idx].row < start.row:
+            tl_end_idx += 1
+        zipped_timelines.append((start, tl_end[tl_end_idx]))
+
     for tl in zipped_timelines:
         tl_cell_tuple = (tl[0].row, tl[0].col - 2)
         tl_data = wk_sht.get_values((tl[0].row, tl[0].col - 1), (tl[1].row + 3, tl[1].col + 7))

@@ -29,7 +29,7 @@ names_bank = sheets_helper.get_animation_videos_names_bank()
 guild_id = [1002644143589302352, 1025780100291112960, 1166119511376793661]  # Server ids
 channel_id = [1067620591038889995, 1141149506021367849, 
             1099083593222983700, 1102872644413571103, 
-            1102872692178309131, 1102872715473457224]  # Channel ids
+            1102872692178309131, 1102872715473457224, 1176655969657303142]  # Channel ids
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("."))
 
 
@@ -122,7 +122,7 @@ async def list_tls(
     simple_tl_descriptions = []
     complex_tl_descriptions = []
     async def button_callback(interaction, timeline):
-        embeds = get_display_embeds_mobile(timeline, 90) if mobile or compact or timeline.simple else get_display_embeds2(timeline, 90)
+        embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds2(timeline)
         view = GetTLView(embeds)
         await interaction.response.edit_message(embed=embeds[0], view=view if len(embeds) > 1 else None)
 
@@ -355,28 +355,35 @@ async def evaluate_homework(ctx,
         hw_string = ''
         conflict = False
         conflicts = hw.evaluate()
-        for i in range(3):
-            if conflicts.length_conflicts[i]:
-                hw_string += f'Team {i+1} missing units!\n'
-                conflict = True
-            if conflicts.tl_code_conflicts[i]:
-                hw_string += f'Team {i+1} missing TL Code!\n'
-                conflict = True
-            if conflicts.ev_conflicts[i]:
-                hw_string += f'Team {i+1} missing EV!\n'
-                conflict = True
-            if conflicts.borrow_conflicts[i]:
-                hw_string += f'Team {i+1} missing borrow!\n'
-                conflict = True
-            if conflicts.unit_conflicts[i]:
-                unit = clean_text(conflicts.unit_conflicts[i])
-                if unit in icon_bank:
-                    unit = icon_bank[unit]
-                if i == 2:
-                    hw_string += f'{unit} in Teams 1 and 3\n'
-                else:
-                    hw_string += f'{unit} in Teams {(i + 1)%3} and {(i + 2)%3 if i + 2 != 3 else 3}\n'
-                conflict = True
+        if all(conflicts.length_conflicts) and \
+           all(conflicts.ev_conflicts) and \
+           all(conflicts.borrow_conflicts) and \
+           all(conflicts.tl_code_conflicts):
+            conflict = True
+            hw_string += f'HW not started!'
+        else:
+            for i in range(3):
+                if conflicts.length_conflicts[i]:
+                    hw_string += f'Team {i+1} missing units!\n'
+                    conflict = True
+                if conflicts.tl_code_conflicts[i]:
+                    hw_string += f'Team {i+1} missing TL Code!\n'
+                    conflict = True
+                if conflicts.ev_conflicts[i]:
+                    hw_string += f'Team {i+1} missing EV!\n'
+                    conflict = True
+                if conflicts.borrow_conflicts[i]:
+                    hw_string += f'Team {i+1} missing borrow!\n'
+                    conflict = True
+                if conflicts.unit_conflicts[i]:
+                    unit = clean_text(conflicts.unit_conflicts[i])
+                    if unit in icon_bank:
+                        unit = icon_bank[unit]
+                    if i == 2:
+                        hw_string += f'{unit} in Teams 1 and 3\n'
+                    else:
+                        hw_string += f'{unit} in Teams {(i + 1)%3} and {(i + 2)%3 if i + 2 != 3 else 3}\n'
+                    conflict = True
         if conflict:
             any_conflicts = True
             embed.add_field(

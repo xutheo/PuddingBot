@@ -161,7 +161,7 @@ def get_display_embeds(timeline):
         embeds[i].set_footer(text=f'Page {i + 1}/{len(embeds)}')
     return embeds
 
-def get_display_embeds2(timeline, ot):
+def get_display_embeds2(timeline, ot=False):
     embed_string = ''
     embeds = [get_base_embed(timeline)]
     embed_idx = 0
@@ -209,7 +209,7 @@ def get_display_embeds2(timeline, ot):
             break
         # print(embed_string)
         if new_time:
-            if len(time) > 8 or 'route' in time.lower():
+            if len(time) > 9 or 'route' in time.lower() or 'branch' in time.lower():
                 embeds[embed_idx].add_field(
                     name=f'**# {time} #**',
                     value='',
@@ -320,7 +320,7 @@ def get_display_embeds2(timeline, ot):
     return embeds
 
 
-def get_display_embeds_mobile(timeline, ot):
+def get_display_embeds_mobile(timeline, ot=False):
     embed_string = ''
     embeds = [get_base_embed(timeline)]
     embed_idx = 0
@@ -386,9 +386,19 @@ def convert_time_with_ot(ot, time):
         if ot > 90 or ot < 0:
             ot = 90
         offset = 90 - ot
-        time_in_seconds = convert_time_to_seconds(time)
-        if time_in_seconds - offset <= 0:
-            return "-1"
-        time = convert_time_to_string(time_in_seconds - offset)
-        return time
+        two_time_split = time.split('-')
+        if len(two_time_split) == 2:
+            first_time_in_seconds = convert_time_to_seconds(two_time_split[0])
+            second_time_in_seconds = convert_time_to_seconds(two_time_split[1])
+            if first_time_in_seconds - offset <= 0:
+                return "-1"
+            first_time_string = convert_time_to_string(first_time_in_seconds - offset)
+            second_time_string = convert_time_to_string(second_time_in_seconds - offset)
+            return f"{first_time_string}-{second_time_string}"
+        else:
+            time_in_seconds = convert_time_to_seconds(time)
+            if time_in_seconds - offset <= 0:
+                return "-1"
+            time = convert_time_to_string(time_in_seconds - offset)
+            return time
     return time
