@@ -28,7 +28,9 @@ class GetTLView(View):
 
 
 def get_base_embed(timeline, include_units=True):
-    description = f'Author: {timeline.author}\nTranscriber: {timeline.transcriber}\nEV: {timeline.ev}, ST_DEV: {timeline.st_dev}\nStyle: {timeline.style}'
+    description = f'Author: {timeline.author}\nTranscriber: \nEV: {timeline.ev}, ' + \
+                  (f'ST_DEV: {timeline.st_dev}' if not timeline.style == 'OT' else f'Time: {timeline.st_dev}') + \
+                  f'\nStyle: {timeline.style}'
     #if not timeline.simple:
     #    description += f'\nStatus: {timeline.status}'
     embed = discord.Embed(
@@ -187,10 +189,11 @@ def get_display_embeds2(timeline, ot=False):
             fields = 3
             action = timeline.tl_actions[i]
             time = action[0]
-            time = convert_time_with_ot(ot, time)
+            if not (len(time) > 9 or 'route' in time.lower() or 'branch' in time.lower()):
+                time = convert_time_with_ot(ot, time)
             if time == "-1":
                 time = ''
-                break
+                continue
             action_description = action[1] if timeline.simple or not timeline.unit_column else action[2]
             flex = ''
             if not timeline.simple:
@@ -203,16 +206,19 @@ def get_display_embeds2(timeline, ot=False):
 
         action = timeline.tl_actions[i]
         new_time = action[0]
-        new_time = convert_time_with_ot(ot, new_time)
+        if not (len(new_time) > 9 or 'route' in new_time.lower() or 'branch' in new_time.lower()):
+            new_time = convert_time_with_ot(ot, new_time)
         if new_time == "-1":
             new_time = ''
-            break
+            continue
         # print(embed_string)
         if new_time:
             if len(time) > 9 or 'route' in time.lower() or 'branch' in time.lower():
+                if len(time) > 247:
+                    time = f'{time[0:244]}...'
                 embeds[embed_idx].add_field(
                     name=f'**# {time} #**',
-                    value='',
+                    value=f'',
                     inline=False)
                 fields += 1
                 first_field = True
@@ -249,7 +255,7 @@ def get_display_embeds2(timeline, ot=False):
                     action_string = ''
                     fields += 3
             time = new_time
-            if fields + 3 > field_limit:
+            if fields + 3 >= field_limit:
                 embeds.append(get_base_embed(timeline, include_units=False))
                 first_field = True
                 embed_idx += 1

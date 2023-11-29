@@ -121,6 +121,7 @@ async def list_tls(
     boss_name = boss_names[boss]
     simple_tl_descriptions = []
     complex_tl_descriptions = []
+    ot_tl_descriptions = []
     async def button_callback(interaction, timeline):
         embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds2(timeline)
         view = GetTLView(embeds)
@@ -139,10 +140,16 @@ async def list_tls(
                 unit_display.append(icon_bank[re_unit])
             else:
                 unit_display.append(unit.name + ',')
-        if len(id) > 3:
+        if 'T' in id:
+            ot_tl_description = (f'{id}: ' +
+                                  ' '.join(unit_display) +
+                                  f' EV: {tl.ev.replace("*","")}' + '\n')
+            ot_tl_descriptions.append(ot_tl_description)
+
+        elif len(id) > 3:
             simple_tl_description = (f'{id}: ' +
-                                     ' '.join(unit_display) +
-                                     f' EV: {tl.ev.replace("*","")}' + '\n')
+                                      ' '.join(unit_display) +
+                                      f' EV: {tl.ev.replace("*","")}' + '\n')
             simple_tl_descriptions.append(simple_tl_description)
 
         else:
@@ -152,18 +159,20 @@ async def list_tls(
             complex_tl_descriptions.append(complex_tl_description)
 
 
+
     embed = discord.Embed(
         type="rich",
         color=0xffffff)
     embed.set_author(name=f'Timelines for boss {boss} - {boss_name}',
                      icon_url=f'{thumbnail_url}')
-    display_helper(embed, complex_tl_descriptions, True, boss)
-    display_helper(embed, simple_tl_descriptions, False, boss)
+    display_helper(embed, complex_tl_descriptions, 'complex', boss)
+    display_helper(embed, simple_tl_descriptions, 'simple', boss)
+    display_helper(embed, ot_tl_descriptions, 'ot', boss)
 
     await ctx.respond(embed=embed, ephemeral=(not show), view=view)
 
 
-def display_helper(embed, tl_descriptions, complex, boss):
+def display_helper(embed, tl_descriptions, style, boss):
     counter = 0
     page = 0
     value = ''
@@ -173,7 +182,9 @@ def display_helper(embed, tl_descriptions, complex, boss):
         if counter == 5:
             if page == 0:
                 embed.add_field(
-                    name='Manual Timelines' if complex else 'Simple Timelines',
+                    name='Manual Timelines' if style == 'complex' else
+                         'Simple Timelines' if style == 'simple' else
+                         'OT Timelines',
                     value=value,
                     inline=False
                 )
@@ -188,13 +199,17 @@ def display_helper(embed, tl_descriptions, complex, boss):
             value = ''
     if page == 0 and counter == 0:
         embed.add_field(
-            name='Manual Timelines' if complex else 'Simple Timelines',
+            name='Manual Timelines' if style == 'complex' else
+                 'Simple Timelines' if style == 'simple' else
+                 'OT Timelines',
             value=f'No manual timelines to display currently.\nPlease run \"/load_tls {boss}\" if you have written one recently.',
             inline=False
         )
     elif page == 0 and counter > 0:
         embed.add_field(
-            name='Manual Timelines' if complex else 'Simple Timelines',
+            name='Manual Timelines' if style == 'complex' else
+                 'Simple Timelines' if style == 'simple' else
+                 'OT Timelines',
             value=value,
             inline=False
         )
@@ -363,17 +378,27 @@ async def evaluate_homework(ctx,
             hw_string += f'HW not started!'
         else:
             for i in range(3):
+                temp_string = ''
+                length_conflict, tl_code_conflict, ev_conflict, borrow_conflict = False, False, False, False
                 if conflicts.length_conflicts[i]:
                     hw_string += f'Team {i+1} missing units!\n'
+                    temp_string += f'Team {i+1} missing units!\n'
+                    length_conflict = True
                     conflict = True
                 if conflicts.tl_code_conflicts[i]:
                     hw_string += f'Team {i+1} missing TL Code!\n'
+                    temp_string += f'Team {i+1} missing TL Code!\n'
+                    tl_code_conflict = True
                     conflict = True
                 if conflicts.ev_conflicts[i]:
                     hw_string += f'Team {i+1} missing EV!\n'
+                    temp_string += f'Team {i+1} missing EV!\n'
+                    ev_conflict = True
                     conflict = True
                 if conflicts.borrow_conflicts[i]:
                     hw_string += f'Team {i+1} missing borrow!\n'
+                    temp_string += f'Team {i+1} missing borrow!\n'
+                    borrow_conflict = True
                     conflict = True
                 if conflicts.unit_conflicts[i]:
                     unit = clean_text(conflicts.unit_conflicts[i])
@@ -416,6 +441,11 @@ async def update_vocab_bank(ctx):
 
 @bot.slash_command(description="Load TLs")
 async def load_tls(ctx, boss):
+    acceptable_bosses = ['1', '2', '3', '4', '5', 'all']
+    if boss not in acceptable_bosses:
+        await ctx.respond(f"Invalid boss number! Please enter a number from 1-5 for boss.", ephemeral=True)
+        return
+
     await ctx.defer()
     if boss == 'all':
         for i in range(1, 6):

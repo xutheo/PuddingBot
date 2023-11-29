@@ -29,7 +29,7 @@ class Timeline:
     SIMPLE_UNIT_STAR_ROW = 8
     SIMPLE_UNIT_UE_ROW = 9
 
-    def __init__(self, tl_data, boss, tl_cell_tuple, simple):
+    def __init__(self, tl_data, boss, tl_cell_tuple, simple, ot=False):
         if not simple:
             while tl_data[self.TL_COL_LABELS_ROW][0] != 'Time':
                 self.TL_COL_LABELS_ROW += 1
@@ -73,7 +73,7 @@ class Timeline:
                 tl_data[0][2].split('Author: ')[1] if 'Author: ' in tl_data[0][2] else ''
             self.transcriber = "" if not tl_data[1][2] else \
                 tl_data[1][2].split('by ')[1] if 'by ' in tl_data[1][2] else ''
-            self.style = "Simple"
+            self.style = "Simple" if not ot else "OT"
             self.ev = tl_data[0][6]
             self.st_dev = tl_data[1][6]
             self.units = []
@@ -161,6 +161,17 @@ def load_to_db(boss, clear=False):
         timelines[tl_data[0][0]] = Timeline(tl_data, boss, tl_cell_tuple, True)
         print(tl_data)
 
+    simple_wk_sht = sheets_helper.get_ots_worksheet(boss)
+    ot_tl_start = simple_wk_sht.find('Author: [^_]',
+                                  cols=(base_search_column + (boss - 1) * 10, base_search_column + (boss - 1) * 10),
+                                  searchByRegex=True)
+    for ot_tl in ot_tl_start:
+        tl_cell_tuple = (ot_tl.row, ot_tl.col - 2)
+        tl_end_cell_tuple = (ot_tl.row + 9, ot_tl.col + 6)
+        tl_data = simple_wk_sht.get_values(tl_cell_tuple, tl_end_cell_tuple)
+        timelines[tl_data[0][0]] = Timeline(tl_data, boss, tl_cell_tuple, True, True)
+        print(tl_data)
+
 
 def load_to_db_thread(boss):
     while load_to_db_lock.locked():
@@ -186,6 +197,7 @@ def background_load_to_db():
     load_to_db_thread(4)
     time.sleep(RUNTIME_DELAY + RUNTIME_BUFFER)
     load_to_db_thread(5)
+
 
 def get_from_db(boss, id):
     timelines = get_single_boss_timelines_from_db(boss)

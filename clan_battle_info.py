@@ -22,6 +22,7 @@ dtier_sheet_ids = {
     5: "311078222"
 }
 dtier_simple_sheet_id = 1391911131
+dtier_ots_id = 835537673
 
 sheet_id = "1maL-3xDhKJnX0ULmpoYpvFvcRsERYKEkbeQHJBSTVRo"
 test_sheet_id = "1maL-3xDhKJnX0ULmpoYpvFvcRsERYKEkbeQHJBSTVRo"
