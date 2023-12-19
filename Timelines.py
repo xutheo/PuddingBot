@@ -140,8 +140,9 @@ def load_to_db(boss, clear=False):
     timelines = SqliteDict(sqlitedict_base_path + str(boss) + '.sqlite', autocommit=True)
     if clear:
         timelines.clear()
-    wk_sht = sheets_helper.get_timelines_worksheet(boss)
 
+    ''' Grabs the Manual TL worksheet and stores manual tls in pudding bot '''
+    wk_sht = sheets_helper.get_timelines_worksheet(boss)
     all_complex_tls = np.array(wk_sht.get_all_values(), dtype='object')
     df = pd.DataFrame(all_complex_tls)
     find_author = df.apply(lambda col: col.str.contains('Original Author: [^_]', na=False), axis=1)
@@ -172,7 +173,7 @@ def load_to_db(boss, clear=False):
         timelines[tl_data2[0][0]] = Timeline(tl_data2, boss, tl_cell_tuple, False)
         time2_3 = time.time()
 
-
+    ''' Grabs the Simple TL worksheet and stores simple tls in pudding bot '''
     base_search_column = 4  # This is for boss 1, each boss afterwards is +10
     simple_wk_sht = sheets_helper.get_simple_timelines_worksheet(boss)
     tl_start = []
@@ -190,15 +191,13 @@ def load_to_db(boss, clear=False):
         #tl_data = simple_wk_sht.get_values(tl_cell_tuple, tl_end_cell_tuple)
         tl_data2 = all_simple_tls[tl[0] - 1:tl[0] + 9, tl[1] - 3: tl[1] + 6]
         timelines[tl_data2[0][0]] = Timeline(tl_data2, boss, tl_cell_tuple, True)
-        #print(tl_data2)
     time5 = time.time()
     #print(f'Zip and store simple tls: {time5-time4}')
-    simple_wk_sht = sheets_helper.get_ots_worksheet(boss)
 
-
-    all_ot_tls = np.array(simple_wk_sht.get_all_values(), dtype='object')
+    ''' Grabs the OT TL worksheet and stores OT tls in pudding bot '''
+    ot_wk_sht = sheets_helper.get_ots_worksheet(boss)
+    all_ot_tls = np.array(ot_wk_sht.get_all_values(), dtype='object')
     ot_tl_start = []
-    all_simple_tls = np.array(simple_wk_sht.get_all_values(), dtype='object')
     df = pd.DataFrame(all_simple_tls)
     find_author = df.apply(lambda col: col.str.contains('Author: [^_]', na=False), axis=1)
     search_column = base_search_column + (boss - 1) * 10 - 1

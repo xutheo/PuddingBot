@@ -61,15 +61,12 @@ channel_ids = {1002644143589302352:
                        "priconne-bot-commands": 850658639354396693
                    }  # Startend Channels
                }  # Channel ids
-non_display_channel_ids= {"bot-dev": 1141149506021367849}
+non_display_channel_ids = {"bot-dev": 1141149506021367849}
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("."))
 
 
 def is_allowed_channel(guild_id, channel_id):
-    print(guild_id)
     channel_ids_for_guild = channel_ids[guild_id].values()
-    print(channel_id)
-    print(channel_ids_for_guild)
     if channel_id not in channel_ids_for_guild and channel_id not in non_display_channel_ids.values():
         allowed_channels = ", ".join(channel_ids[guild_id].keys())
         return f"Please use this command in the guild cb channels: {allowed_channels}"
