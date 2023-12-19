@@ -173,17 +173,7 @@ def get_display_embeds2(timeline, ot=False):
     field_limit = 25
     fields = 0
     first_field = True
-    zipped_status = zip(timeline.units, timeline.starting_set_status[1:6])
-    auto_state = timeline.starting_set_status[7]
-    statuses = []
-    unit_statuses = []
-    for status in zipped_status:
-        unit_statuses.append(icon_bank[clean_text(status[0].name)])
-        statuses.append(f'{icon_bank["greeno"] if status[1] == "SET" else ":x:"}')
-    embeds[embed_idx].add_field(
-        name='Initial Set Status',
-        value=f'{"".join(unit_statuses)}\n{"".join(statuses)}\nAUTO: {auto_state}',
-        inline=False)
+    add_set_status_and_auto_state(embeds[embed_idx], timeline)
     for i in range(0, len(timeline.tl_actions)):
         if i == 0:
             fields = 3
@@ -326,11 +316,13 @@ def get_display_embeds2(timeline, ot=False):
     return embeds
 
 
-def get_display_embeds_mobile(timeline, ot=False):
+def get_display_embeds_compact(timeline, ot=False):
     embed_string = ''
     embeds = [get_base_embed(timeline)]
     embed_idx = 0
     embed_limit = 1000
+    if not timeline.simple:
+        add_set_status_and_auto_state(embeds[embed_idx], timeline)
     for i in range(0, len(timeline.tl_actions)):
         action = timeline.tl_actions[i]
         time = action[0]
@@ -408,3 +400,17 @@ def convert_time_with_ot(ot, time):
             time = convert_time_to_string(time_in_seconds - offset)
             return time
     return time
+
+
+def add_set_status_and_auto_state(embed, timeline):
+    zipped_status = zip(timeline.units, timeline.starting_set_status[1:6])
+    auto_state = timeline.starting_set_status[7]
+    statuses = []
+    unit_statuses = []
+    for status in zipped_status:
+        unit_statuses.append(icon_bank[clean_text(status[0].name)])
+        statuses.append(f'{icon_bank["greeno"] if status[1] == "SET" else ":x:"}')
+    embed.add_field(
+        name='Initial Set Status',
+        value=f'{"".join(unit_statuses)}\n{"".join(statuses)}\nAUTO: {auto_state}',
+        inline=False)

@@ -33,12 +33,12 @@ def get_animation_videos():
     all_values = animation_bank.get_all_values()
 
     for idx, row in enumerate(all_values):
-        if row[4].strip() and row[5].strip():
+        if row[4].strip():
             mapping[clean_text(row[4])] = row[5].strip().split(";;;")
             skills_raw.append(row[5].strip())
-
+    print(mapping)
     return mapping
-
+get_animation_videos()
 
 def get_animation_videos_names_bank():
     # Get animation cancel videos

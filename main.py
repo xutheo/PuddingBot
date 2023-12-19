@@ -9,7 +9,7 @@ import json
 import unicodedata
 import os
 from discord.ui import Button, View
-from embed_helpers import get_display_embeds_mobile, get_display_embeds, GetTLView, get_display_embeds2
+from embed_helpers import get_display_embeds_compact, get_display_embeds, GetTLView, get_display_embeds2
 from functools import partial
 from clan_battle_info import boss_names, boss_image_urls
 import re
@@ -17,6 +17,7 @@ from threading import Thread
 from icon_bank import icon_bank, clean_text
 import difflib
 from Homework import get_homework
+import time
 
 tabulate.PRESERVE_WHITESPACE = True
 
@@ -26,16 +27,53 @@ animation_bank = sheets_helper.get_animation_videos()
 names_bank = sheets_helper.get_animation_videos_names_bank()
 
 # Define our bot
-guild_id = [1002644143589302352, 1025780100291112960, 1166119511376793661]  # Server ids
-channel_id = [1067620591038889995, 1141149506021367849, 
-            1099083593222983700, 1102872644413571103, 
-            1102872692178309131, 1102872715473457224, 1176655969657303142]  # Channel ids
+guild_ids = {"Zalteo Test Server": 1002644143589302352,  # Zalteo Test Server
+             "Worry/Chorry": 1025780100291112960,  # Worry/Chorry
+             "Zalteo Icon Bank": 1166119511376793661,  # Zalteo Icon Bank
+             "Startend": 805006358138585128  # Startend
+             }  # Server ids
+channel_ids = {1002644143589302352:
+                   {"super-private": 1067620591038889995,
+                    "super-private-2": 1141152593683415060
+                   },  # Zalteo Test Server Channels
+               1166119511376793661:
+                   {"general": 1176655969657303142,
+                    "test": 1166119511376793664
+                   },  # Zalteo Icon Bank Channels
+               1025780100291112960:
+                   {"d-tier-cooking": 1102872715473457224,
+                    "jp-bot-spam": 1094596240274116608,
+                    "worry-chef-battle": 1025781394078715934,
+                    "worry-boss-1": 1028582387019423784,
+                    "worry-boss-2": 1028582408154521680,
+                    "worry-boss-3": 1028582424252260372,
+                    "worry-boss-4": 1028582442606547054,
+                    "worry-boss-5": 1028582461984227511,
+                    "chorry-clown-battle": 1025781436315336775,
+                    "chorry-boss-1": 1056083088951738419,
+                    "chorry-boss-2": 1056083142999552070,
+                    "chorry-boss-3": 1056083194597867530,
+                    "chorry-boss-4": 1056083259672498206,
+                    "chorry-boss-5": 1056083315142164510,
+                   },  # Worry/Chorry Channels
+               805006358138585128:
+                   {
+                       "priconne-bot-commands": 850658639354396693
+                   }  # Startend Channels
+               }  # Channel ids
+non_display_channel_ids= {"bot-dev": 1141149506021367849}
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("."))
 
 
-async def is_allowed_channel(ctx):
-    #return ctx.channel.id in channel_id
-    return True
+def is_allowed_channel(guild_id, channel_id):
+    print(guild_id)
+    channel_ids_for_guild = channel_ids[guild_id].values()
+    print(channel_id)
+    print(channel_ids_for_guild)
+    if channel_id not in channel_ids_for_guild and channel_id not in non_display_channel_ids.values():
+        allowed_channels = ", ".join(channel_ids[guild_id].keys())
+        return f"Please use this command in the guild cb channels: {allowed_channels}"
+    return None
 
 
 async def convert_and_translate_timeline(tl, translate=True):
@@ -67,13 +105,14 @@ async def on_ready():
 
 
 # =============== Translate TL =============
-@bot.slash_command(guild_ids=guild_id, description="Translate TL")
+@bot.slash_command(guild_ids=guild_ids.values(), description="Translate TL")
 async def translate_tl(
         ctx,
         tl: discord.Attachment,
         show: Option(bool, "Show this timeline to everyone", required=False, default=False)):
-    if not await is_allowed_channel(ctx):
-        await ctx.respond("Permission denied")
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
         return
     timeline = await convert_and_translate_timeline(tl)
     embed = discord.Embed(title="Translated Timeline",
@@ -90,6 +129,10 @@ async def get_tl(
         ot: Option(int, "Input your ot timer in seconds.", required=False, default=False),
         show: Option(bool, "Show this timeline to everyone", required=False, default=False),
         compact: Option(bool, "Show a compact version of the TL", required=False, default=False)):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
     boss = int(id[1])
     mobile = ctx.author.is_on_mobile()
     print(mobile)
@@ -100,7 +143,7 @@ async def get_tl(
         await ctx.respond(f"A timeline with that ID does not exist!\nPlease run \"/load_tls {boss}\" if you have written {id} recently.", ephemeral=True)
         return
 
-    embeds = get_display_embeds_mobile(timeline, ot) if mobile or compact or timeline.simple else get_display_embeds2(timeline, ot)
+    embeds = get_display_embeds_compact(timeline, ot) if mobile or compact or timeline.simple else get_display_embeds2(timeline, ot)
     view = GetTLView(embeds)
     await ctx.respond(embed=embeds[0], ephemeral=(not show), view=view if len(embeds) > 1 else None)
 
@@ -112,6 +155,10 @@ async def list_tls(
         boss: Option(int, "1 - 5", min_value=1, max_value=5),
         show: Option(bool, "Show this timeline to everyone", required=False, default=False),
         compact: Option(bool, "Show a compact version of the TL", required=False, default=False)):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
     mobile = ctx.author.is_on_mobile()
     timelines = Timelines.get_single_boss_timelines_from_db(boss)
 
@@ -123,7 +170,7 @@ async def list_tls(
     complex_tl_descriptions = []
     ot_tl_descriptions = []
     async def button_callback(interaction, timeline):
-        embeds = get_display_embeds_mobile(timeline) if mobile or compact or timeline.simple else get_display_embeds2(timeline)
+        embeds = get_display_embeds_compact(timeline) if mobile or compact or timeline.simple else get_display_embeds2(timeline)
         view = GetTLView(embeds)
         await interaction.response.edit_message(embed=embeds[0], view=view if len(embeds) > 1 else None)
 
@@ -223,12 +270,15 @@ def display_helper(embed, tl_descriptions, style, boss):
 
 
 # =============== Animation Cancel command =============
-@bot.slash_command(guild_ids=guild_id, description="Gets animation cancel guide video on specified character.")
+@bot.slash_command(guild_ids=guild_ids.values(), description="Gets animation cancel guide video on specified character.")
 async def animation_cancel(
         ctx,
         character,
         show: Option(bool, "Show this to everyone", required=False, default=False)):
-
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
     character_cleaned = clean_text(character)
     closest_matches = difflib.get_close_matches(character_cleaned, names_bank.keys(), n=1)
     if len(closest_matches) == 0 or closest_matches[0] not in animation_bank:
@@ -263,25 +313,35 @@ async def animation_cancel(
         embed = discord.Embed(title=f"Animation Cancel for {character}", color=0xfffeff)
 
     animations = animation_bank[closest_match]
-    for animation in animations:
-        split_idx = animation.find('https')
-        youtube_url = animation[split_idx:]
-        skill_description_jp = animation[:split_idx]
-        skill_description_en = await translate_text(skill_description_jp)
-        all_english = re.match("^[ ()A-Za-z0-9_-]*$", skill_description_en)
+    if len(animations) > 0 and animations[0] != '':
+        for animation in animations:
+            split_idx = animation.find('https')
+            youtube_url = animation[split_idx:]
+            skill_description_jp = animation[:split_idx]
+            skill_description_en = await translate_text(skill_description_jp)
+            all_english = re.match("^[ ()A-Za-z0-9_-]*$", skill_description_en)
 
+            embed.add_field(
+                name=f'{skill_description_en}' if all_english else f'{skill_description_jp}',
+                value=f"{youtube_url}",
+                inline=False)
+    else:
         embed.add_field(
-            name=f'{skill_description_en}' if all_english else f'{skill_description_jp}',
-            value=f"{youtube_url}",
+            name=f'',
+            value=f"Videos do not exist for this character yet!",
             inline=False)
 
     await ctx.respond(embed=embed, ephemeral=(not show))
 
 
 # =============== Show Animation Cancel Units command =============
-@bot.slash_command(guild_ids=guild_id, 
+@bot.slash_command(guild_ids=guild_ids.values(),
                 description="Displays all characters that have an animation cancel video available.")
 async def animation_cancel_unit_names(ctx,show: Option(bool, "Show this to everyone", required=False, default=False)):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
     embed = discord.Embed(
         title="Unit names with animation cancel",
         description="These names and nicknames can be used with the /animation_cancel command." + \
@@ -290,7 +350,9 @@ async def animation_cancel_unit_names(ctx,show: Option(bool, "Show this to every
     )
     results = []
     for i in animation_bank:
-        results.append(i.capitalize())
+        if len(animation_bank[i]) > 0 and animation_bank[i][0] != '':
+            print(f'{i}: {animation_bank[i]}')
+            results.append(i.capitalize())
 
     results.sort()
     results_string = ""
@@ -353,9 +415,13 @@ async def animation_cancel_unit_names(ctx,show: Option(bool, "Show this to every
 
 
 # =============== Homework Command =============
-@bot.slash_command(guild_ids=guild_id, description="Evaluates homework for the clan")
+@bot.slash_command(guild_ids=guild_ids.values(), description="Evaluates homework for the clan")
 async def evaluate_homework(ctx,
                             chorry: Option(bool, "Evaluate for Chorry instead of Worry", required=False, default=False)):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
     await ctx.defer()
     embed = discord.Embed(
         title="Users with bad homework",
@@ -427,9 +493,12 @@ async def evaluate_homework(ctx,
 
 
 # =============== Reload translations from woody translation sheet =============
-@bot.slash_command(guild_ids=guild_id, description="Pulls the latest woody-grade translations")
-@commands.has_role(1025780684574433390)
+@bot.slash_command(guild_ids=guild_ids.values(), description="Pulls the latest woody-grade translations")
 async def update_vocab_bank(ctx):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
     global translation_mapping
     global animation_bank
     await ctx.defer()
@@ -441,6 +510,11 @@ async def update_vocab_bank(ctx):
 
 @bot.slash_command(description="Load TLs")
 async def load_tls(ctx, boss):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
+    start_time = time.time()
     acceptable_bosses = ['1', '2', '3', '4', '5', 'all']
     if boss not in acceptable_bosses:
         await ctx.respond(f"Invalid boss number! Please enter a number from 1-5 for boss.", ephemeral=True)
@@ -453,12 +527,18 @@ async def load_tls(ctx, boss):
             Timelines.load_to_db(i, clear=True)
     else:
         Timelines.load_to_db(int(boss), clear=True)
+    end_time = time.time()
+    print(f'Total time to load: {end_time-start_time}')
     await ctx.respond(f"Loaded TLs for boss: {boss}", ephemeral=True)
 
 
 # =============== Help command =============
-@bot.slash_command(guild_ids=guild_id, description="Get a description of all commands")
+@bot.slash_command(guild_ids=guild_ids.values(), description="Get a description of all commands")
 async def help(ctx):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
     embed = discord.Embed(title="Commands Help", color=0xfffeff)
 
     embed.add_field(

@@ -5,6 +5,8 @@ import os
 import threading
 import time
 from threading import Lock
+import numpy as np
+import pandas as pd
 
 load_to_db_lock = Lock()
 sqlitedict_base_path = f"/mnt/timeline_data/test_"
@@ -63,8 +65,14 @@ class Timeline:
             self.tl_actions = tl_data[self.TL_START_ROW:tl_end_row - 2]
             labels_length = len(self.tl_labels)
             actions_length = len(self.tl_actions[0])
-            for tl_action in self.tl_actions:
-                del tl_action[labels_length - 2: actions_length - 2]
+            # We need to delete extra columns because action description takes up more than one column
+            cols_to_delete = []
+            for i in range(labels_length-2, actions_length-2):
+                cols_to_delete.append(i)
+            self.tl_actions = np.delete(self.tl_actions, cols_to_delete, 1)
+            #print(f"self tl actions: {self.tl_actions}")
+            #for tl_action in self.tl_actions:
+            #    del tl_action[labels_length - 2: actions_length - 2]
             self.simple = False
         else:
             self.id = tl_data[0][0]
@@ -133,44 +141,76 @@ def load_to_db(boss, clear=False):
     if clear:
         timelines.clear()
     wk_sht = sheets_helper.get_timelines_worksheet(boss)
-    tl_start = wk_sht.find('Original Author: [^_]', searchByRegex=True)
-    tl_end = wk_sht.find('Extra Notes')
-    tl_start_idx = 0
+
+    all_complex_tls = np.array(wk_sht.get_all_values(), dtype='object')
+    df = pd.DataFrame(all_complex_tls)
+    find_author = df.apply(lambda col: col.str.contains('Original Author: [^_]', na=False), axis=1)
+    find_notes = df.apply(lambda col: col.str.contains('Extra Notes', na=False), axis=1)
+
+    tl_start = []
+    for index, row in find_author.iterrows():
+        for i in range(len(row)):
+            if row[i]:
+                tl_start.append((index + 1, i + 1))
+
+    tl_end = []
+    for index, row in find_notes.iterrows():
+        for i in range(len(row)):
+            if row[i]:
+                tl_end.append((index + 1, i + 1))
+
     tl_end_idx = 0
     zipped_timelines = []
     for start in tl_start:
-        while tl_end[tl_end_idx].row < start.row:
+        while tl_end[tl_end_idx][0] < start[0]:
             tl_end_idx += 1
         zipped_timelines.append((start, tl_end[tl_end_idx]))
 
     for tl in zipped_timelines:
-        tl_cell_tuple = (tl[0].row, tl[0].col - 2)
-        tl_data = wk_sht.get_values((tl[0].row, tl[0].col - 1), (tl[1].row + 3, tl[1].col + 7))
-        timelines[tl_data[0][0]] = Timeline(tl_data, boss, tl_cell_tuple, False)
-        print(tl_data)
+        tl_cell_tuple = (tl[0][0], tl[0][1] - 2)
+        tl_data2 = all_complex_tls[tl[0][0]-1:tl[1][0]+1, tl[0][1] - 2:tl[1][1] + 7]
+        timelines[tl_data2[0][0]] = Timeline(tl_data2, boss, tl_cell_tuple, False)
+        time2_3 = time.time()
+
 
     base_search_column = 4  # This is for boss 1, each boss afterwards is +10
     simple_wk_sht = sheets_helper.get_simple_timelines_worksheet(boss)
-    tl_start = simple_wk_sht.find('Author: [^_]',
-                                  cols=(base_search_column + (boss - 1) * 10, base_search_column + (boss - 1) * 10),
-                                  searchByRegex=True)
-    for tl in tl_start:
-        tl_cell_tuple = (tl.row, tl.col - 2)
-        tl_end_cell_tuple = (tl.row + 9, tl.col + 6)
-        tl_data = simple_wk_sht.get_values(tl_cell_tuple, tl_end_cell_tuple)
-        timelines[tl_data[0][0]] = Timeline(tl_data, boss, tl_cell_tuple, True)
-        print(tl_data)
+    tl_start = []
+    all_simple_tls = np.array(simple_wk_sht.get_all_values(), dtype='object')
+    df = pd.DataFrame(all_simple_tls)
+    find_author = df.apply(lambda col: col.str.contains('Author: [^_]', na=False), axis=1)
+    search_column = base_search_column + (boss - 1) * 10 - 1
+    for index, row in find_author.iterrows():
+        if row[search_column]:
+            tl_start.append((index + 1, search_column + 1))
 
+    for tl in tl_start:
+        tl_cell_tuple = (tl[0], tl[1] - 2)
+        tl_end_cell_tuple = (tl[0] + 9, tl[1] + 6)
+        #tl_data = simple_wk_sht.get_values(tl_cell_tuple, tl_end_cell_tuple)
+        tl_data2 = all_simple_tls[tl[0] - 1:tl[0] + 9, tl[1] - 3: tl[1] + 6]
+        timelines[tl_data2[0][0]] = Timeline(tl_data2, boss, tl_cell_tuple, True)
+        #print(tl_data2)
+    time5 = time.time()
+    #print(f'Zip and store simple tls: {time5-time4}')
     simple_wk_sht = sheets_helper.get_ots_worksheet(boss)
-    ot_tl_start = simple_wk_sht.find('Author: [^_]',
-                                  cols=(base_search_column + (boss - 1) * 10, base_search_column + (boss - 1) * 10),
-                                  searchByRegex=True)
+
+
+    all_ot_tls = np.array(simple_wk_sht.get_all_values(), dtype='object')
+    ot_tl_start = []
+    all_simple_tls = np.array(simple_wk_sht.get_all_values(), dtype='object')
+    df = pd.DataFrame(all_simple_tls)
+    find_author = df.apply(lambda col: col.str.contains('Author: [^_]', na=False), axis=1)
+    search_column = base_search_column + (boss - 1) * 10 - 1
+    for index, row in find_author.iterrows():
+        if row[search_column]:
+            ot_tl_start.append((index + 1, search_column + 1))
+
     for ot_tl in ot_tl_start:
-        tl_cell_tuple = (ot_tl.row, ot_tl.col - 2)
-        tl_end_cell_tuple = (ot_tl.row + 9, ot_tl.col + 6)
-        tl_data = simple_wk_sht.get_values(tl_cell_tuple, tl_end_cell_tuple)
-        timelines[tl_data[0][0]] = Timeline(tl_data, boss, tl_cell_tuple, True, True)
-        print(tl_data)
+        tl_cell_tuple = (ot_tl[0], ot_tl[1] - 2)
+        tl_end_cell_tuple = (ot_tl[0] + 9, ot_tl[1] + 6)
+        tl_data2 = all_ot_tls[ot_tl[0] - 1:ot_tl[0] + 9, ot_tl[1] - 3: ot_tl[1] + 6]
+        timelines[tl_data2[0][0]] = Timeline(tl_data2, boss, tl_cell_tuple, True, True)
 
 
 def load_to_db_thread(boss):
