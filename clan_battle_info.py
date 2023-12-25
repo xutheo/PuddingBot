@@ -1,17 +1,17 @@
 boss_image_urls = {
-    1: "https://redive.estertion.win/icon/unit/302100.webp",
-    2: "https://redive.estertion.win/icon/unit/309000.webp",
-    3: "https://redive.estertion.win/icon/unit/309200.webp",
-    4: "https://redive.estertion.win/icon/unit/306900.webp",
-    5: "https://redive.estertion.win/icon/unit/301800.webp"
+    1: "https://redive.estertion.win/icon/unit/319600.webp",
+    2: "https://redive.estertion.win/icon/unit/316600.webp",
+    3: "https://redive.estertion.win/icon/unit/304800.webp",
+    4: "https://redive.estertion.win/icon/unit/311200.webp",
+    5: "https://redive.estertion.win/icon/unit/300400.webp"
 }
 
 boss_names = {
-    1: "Wyvern",
-    2: "Land Sloth",
-    3: "Bird",
-    4: "Tri Rocker",
-    5: "Sagitarius"
+    1: "Frost Hound",
+    2: "Goblin Rider",
+    3: "Wraithlord",
+    4: "Flower Chevalier",
+    5: "Algedi"
 }
 
 dtier_sheet_ids = {
@@ -24,11 +24,11 @@ dtier_sheet_ids = {
 dtier_simple_sheet_id = 1391911131
 dtier_ots_id = 835537673
 
-sheet_id = "1maL-3xDhKJnX0ULmpoYpvFvcRsERYKEkbeQHJBSTVRo"
+sheet_id = "1pTaOTqDkYALTwbXeWzeohtXqNgLTie_-5FNwP2Yl_Aw"
 test_sheet_id = "1maL-3xDhKJnX0ULmpoYpvFvcRsERYKEkbeQHJBSTVRo"
 
 translation_sheet_id = '11B6-6mmQC4XMTiSadrfKGlS_y4qSnLzfFHj1_W8XLhI'
 
-homework_sheet_id = '1ZQwMjCIqnvqX-B6aWYAs1K384VkFU-SaTPefCslWqSQ'
-chorry_homework_sheet_id = '1tyQQUn3cc05vIu58NanTvSzQG27LhisZcuVNiP-aJOY'
+homework_sheet_id = '14vrB05QeNMt4VT7xuSY8Df7d5AqxPXCxdnmmo7TK5TU'
+chorry_homework_sheet_id = '1KHlDDTJ34ExsB3vXMb3RZAUhstPR_TR9L1jsPEZJ9ww'
 homework_sheet_gid = '574547770'

@@ -428,6 +428,7 @@ async def evaluate_homework(ctx,
     homework = get_homework(chorry)
     display_string = ''
     any_conflicts = False
+    fields = 0
     for hw in homework:
         print(f'{hw.user}\n{hw.comp1}{hw.comp2}{hw.comp3}{hw.evaluate()}')
         hw_string = ''
@@ -479,6 +480,10 @@ async def evaluate_homework(ctx,
                 value=hw_string,
                 inline=True
             )
+            fields += 1
+            if fields >= 25:
+                await ctx.respond("More than 25 members have not completed their homework. Please run this again when homework is closer to completion!")
+                return
 
     if not any_conflicts:
         embed = discord.Embed(
@@ -593,6 +598,6 @@ async def help(ctx):
 
 keep_alive()
 token = json.load(open("service_account.json"))['discord_token']
-if os.environ['COMPUTERNAME'] == 'ZALTEO':
+if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPTOP-RVEEJPKP':
     token = json.load(open("service_account.json"))['discord_token_test']
 bot.run(token)
