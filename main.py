@@ -51,12 +51,14 @@ channel_ids = {1002644143589302352:
                     "worry-boss-3": 1028582424252260372,
                     "worry-boss-4": 1028582442606547054,
                     "worry-boss-5": 1028582461984227511,
+                    "worry-announcements": 1025781269411397662,
                     "chorry-clown-battle": 1025781436315336775,
                     "chorry-boss-1": 1056083088951738419,
                     "chorry-boss-2": 1056083142999552070,
                     "chorry-boss-3": 1056083194597867530,
                     "chorry-boss-4": 1056083259672498206,
                     "chorry-boss-5": 1056083315142164510,
+                    "chorry-announcements": 1025781292031299604,
                    },  # Worry/Chorry Channels
                805006358138585128:
                    {
