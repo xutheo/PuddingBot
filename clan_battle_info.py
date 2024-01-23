@@ -7,11 +7,11 @@ boss_image_urls = {
 }
 
 boss_names = {
-    1: "Wyvern",
-    2: "Land Sloth",
-    3: "Bird",
-    4: "Tri Rocker",
-    5: "Sagitarius"
+    1: "Madam Electra",
+    2: "Rai-rai",
+    3: "Raiden",
+    4: "Mad Bear",
+    5: "Aquarius"
 }
 
 dtier_sheet_ids = {
@@ -24,8 +24,8 @@ dtier_sheet_ids = {
 dtier_simple_sheet_id = 1391911131
 dtier_ots_id = 835537673
 
-sheet_id = "1maL-3xDhKJnX0ULmpoYpvFvcRsERYKEkbeQHJBSTVRo"
-test_sheet_id = "1maL-3xDhKJnX0ULmpoYpvFvcRsERYKEkbeQHJBSTVRo"
+sheet_id = "1RgY6B29dUZu_RMopstmHDxV4xcKA104Cs9GkCC9iK7k"
+test_sheet_id = "1RgY6B29dUZu_RMopstmHDxV4xcKA104Cs9GkCC9iK7k"
 
 translation_sheet_id = '11B6-6mmQC4XMTiSadrfKGlS_y4qSnLzfFHj1_W8XLhI'
 

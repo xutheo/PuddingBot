@@ -58,7 +58,8 @@ channel_ids = {1002644143589302352:
                    },  # Worry/Chorry Channels
                805006358138585128:
                    {
-                       "priconne-bot-commands": 850658639354396693
+                       "priconne-bot-commands": 850658639354396693,
+                       "jp-cb-relaxing-room": 933032227376345148
                    }  # Startend Channels
                }  # Channel ids
 non_display_channel_ids = {"bot-dev": 1141149506021367849}
