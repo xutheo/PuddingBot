@@ -42,6 +42,8 @@ channel_ids = {1002644143589302352:
                    },  # Zalteo Icon Bank Channels
                1025780100291112960:
                    {"d-tier-cooking": 1102872715473457224,
+                    "bc-tier-cooking": 1102872644413571103,
+                    "chefs-discussion": 1099083593222983700,
                     "jp-bot-spam": 1094596240274116608,
                     "worry-chef-battle": 1025781394078715934,
                     "worry-boss-1": 1028582387019423784,
@@ -49,12 +51,14 @@ channel_ids = {1002644143589302352:
                     "worry-boss-3": 1028582424252260372,
                     "worry-boss-4": 1028582442606547054,
                     "worry-boss-5": 1028582461984227511,
+                    "worry-announcements": 1025781269411397662,
                     "chorry-clown-battle": 1025781436315336775,
                     "chorry-boss-1": 1056083088951738419,
                     "chorry-boss-2": 1056083142999552070,
                     "chorry-boss-3": 1056083194597867530,
                     "chorry-boss-4": 1056083259672498206,
                     "chorry-boss-5": 1056083315142164510,
+                    "chorry-announcements": 1025781292031299604,
                    },  # Worry/Chorry Channels
                805006358138585128:
                    {
@@ -429,6 +433,7 @@ async def evaluate_homework(ctx,
     homework = get_homework(chorry)
     display_string = ''
     any_conflicts = False
+    fields = 0
     for hw in homework:
         print(f'{hw.user}\n{hw.comp1}{hw.comp2}{hw.comp3}{hw.evaluate()}')
         hw_string = ''
@@ -480,6 +485,10 @@ async def evaluate_homework(ctx,
                 value=hw_string,
                 inline=True
             )
+            fields += 1
+            if fields >= 25:
+                await ctx.respond("More than 25 members have not completed their homework. Please run this again when homework is closer to completion!")
+                return
 
     if not any_conflicts:
         embed = discord.Embed(
@@ -594,6 +603,6 @@ async def help(ctx):
 
 keep_alive()
 token = json.load(open("service_account.json"))['discord_token']
-if os.environ['COMPUTERNAME'] == 'ZALTEO':
+if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPTOP-RVEEJPKP':
     token = json.load(open("service_account.json"))['discord_token_test']
 bot.run(token)

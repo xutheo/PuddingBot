@@ -10,7 +10,7 @@ import pandas as pd
 
 load_to_db_lock = Lock()
 sqlitedict_base_path = f"/mnt/timeline_data/test_"
-if os.environ['COMPUTERNAME'] == 'ZALTEO':
+if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPTOP-RVEEJPKP':
     sqlitedict_base_path = f"./mnt/timeline_data/test_"
 
 
@@ -179,9 +179,9 @@ def load_to_db(boss, clear=False):
     tl_start = []
     all_simple_tls = np.array(simple_wk_sht.get_all_values(), dtype='object')
     df = pd.DataFrame(all_simple_tls)
-    find_author = df.apply(lambda col: col.str.contains('Author: [^_]', na=False), axis=1)
+    find_author_simple = df.apply(lambda col: col.str.contains('Author: [^_]', na=False), axis=1)
     search_column = base_search_column + (boss - 1) * 10 - 1
-    for index, row in find_author.iterrows():
+    for index, row in find_author_simple.iterrows():
         if row[search_column]:
             tl_start.append((index + 1, search_column + 1))
 
@@ -198,10 +198,10 @@ def load_to_db(boss, clear=False):
     ot_wk_sht = sheets_helper.get_ots_worksheet(boss)
     all_ot_tls = np.array(ot_wk_sht.get_all_values(), dtype='object')
     ot_tl_start = []
-    df = pd.DataFrame(all_simple_tls)
-    find_author = df.apply(lambda col: col.str.contains('Author: [^_]', na=False), axis=1)
+    df = pd.DataFrame(all_ot_tls)
+    find_author_ot = df.apply(lambda col: col.str.contains('Author: [^_]', na=False), axis=1)
     search_column = base_search_column + (boss - 1) * 10 - 1
-    for index, row in find_author.iterrows():
+    for index, row in find_author_ot.iterrows():
         if row[search_column]:
             ot_tl_start.append((index + 1, search_column + 1))
 

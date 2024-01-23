@@ -1,9 +1,9 @@
 boss_image_urls = {
-    1: "https://redive.estertion.win/icon/unit/302100.webp",
-    2: "https://redive.estertion.win/icon/unit/309000.webp",
-    3: "https://redive.estertion.win/icon/unit/309200.webp",
-    4: "https://redive.estertion.win/icon/unit/306900.webp",
-    5: "https://redive.estertion.win/icon/unit/301800.webp"
+    1: "https://redive.estertion.win/icon/unit/319600.webp",
+    2: "https://redive.estertion.win/icon/unit/316600.webp",
+    3: "https://redive.estertion.win/icon/unit/304800.webp",
+    4: "https://redive.estertion.win/icon/unit/311200.webp",
+    5: "https://redive.estertion.win/icon/unit/300400.webp"
 }
 
 boss_names = {
@@ -29,6 +29,6 @@ test_sheet_id = "1RgY6B29dUZu_RMopstmHDxV4xcKA104Cs9GkCC9iK7k"
 
 translation_sheet_id = '11B6-6mmQC4XMTiSadrfKGlS_y4qSnLzfFHj1_W8XLhI'
 
-homework_sheet_id = '1ZQwMjCIqnvqX-B6aWYAs1K384VkFU-SaTPefCslWqSQ'
-chorry_homework_sheet_id = '1tyQQUn3cc05vIu58NanTvSzQG27LhisZcuVNiP-aJOY'
+homework_sheet_id = '14vrB05QeNMt4VT7xuSY8Df7d5AqxPXCxdnmmo7TK5TU'
+chorry_homework_sheet_id = '1KHlDDTJ34ExsB3vXMb3RZAUhstPR_TR9L1jsPEZJ9ww'
 homework_sheet_gid = '574547770'
