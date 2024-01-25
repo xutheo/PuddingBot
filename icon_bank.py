@@ -1,9 +1,9 @@
 import re
 
-
-def clean_text(text):
-    return re.sub('\\W+', '', text).lower()
-
+shortened_names = {
+    'shizururino': 'shizurino',
+    'xpecorine': 'xpeco'
+}
 
 icon_bank = {
     'akinosaren': '<:akinosaren:1166119060514291823>',
@@ -27,6 +27,7 @@ icon_bank = {
     'fquria': '<:FQuria:1177426914160422983>',
     'friri': '<:FRiri:1177426915926224936>',
     'hatsuneshiori': '<:HatsuneShiori:1188722707517419590>',
+    'hatsushio': '<:HatsuneShiori:1188722707517419590>',
     'hmiyako': '<:HMiyako:1188722708377243719>',
     'homare': '<:Homare:1166121466677448714>',
     'htomo': '<:HTomo:1166116621325176984>',
@@ -45,7 +46,9 @@ icon_bank = {
     'neneka': '<:Neneka:1166104821393281124>',
     'nkuuka': '<:NKuuka:1166116629617319966>',
     'nshizuru': '<:NShizuru:1188722710742835260>',
+    'nyhatsune': '<:NYHatsune:1199687597899907144>',
     'nyhomare': '<:NYHomare:1166104824727744563>',
+    'nykasumi': '<:NYKasumi:1199687599133048932>',
     'nymisato': '<:NYMisato:1166104826774573056>',
     'nymitsuki': '<:NYMitsuki:1178638829419241492>',
     'nyneneka': '<:NYNeneka:1166105046459629699>',
@@ -67,6 +70,7 @@ icon_bank = {
     'schika': '<:SChika:1166106847195955250>',
     'sfyuni': '<:SFYuni:1166116690489262131> ',
     'shefi': '<:Shefi:1166116691936292904>',
+    'shizurino': '<:ShizuRino:1199687600223559680>',
     'shiori': '<:Shiori:1177426920065994804>',
     'skokkoro': '<:SKokkoro:1166095541885747241>',
     'smimi': '<:SMimi:1166105221982847089>',
@@ -88,6 +92,7 @@ icon_bank = {
     'uzuki': '<:Uzuki:1178638830383935550> ',
     'vampy': '<:Vampy:1166121473065365596>',
     'vikala': '<:Vikala:1166116705962033173>',
+    'vshizuru': '<:VShizuru:1199909291411394661>',
     'wchristina': '<:WChristina:1178638832321691758> ',
     'wdjeeta': '<:WDjeeta:1166116707564269648>',
     'wmatsuri': '<:WMatsuri:1166121474290098206>',
@@ -103,3 +108,13 @@ icon_bank = {
 
     'greeno': '<:greeno:1168060002636935168>'
 }
+
+
+def clean_text(text):
+    return re.sub('\\W+', '', text).lower()
+
+
+def shorten_name(unit):
+    if unit in shortened_names:
+        return shortened_names[unit]
+    return unit

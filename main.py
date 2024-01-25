@@ -11,12 +11,12 @@ import os
 from discord.ui import Button, View
 from embed_helpers import get_display_embeds_compact, get_display_embeds, GetTLView, get_display_embeds2
 from functools import partial
-from clan_battle_info import boss_names, boss_image_urls
+from clan_battle_info import boss_names, boss_image_urls, score_multipliers
 import re
 from threading import Thread
 from icon_bank import icon_bank, clean_text
 import difflib
-from Homework import get_homework
+from Homework import get_homework, Homework, convert_ev_to_float
 import time
 
 tabulate.PRESERVE_WHITESPACE = True
@@ -515,6 +515,7 @@ async def update_vocab_bank(ctx):
     await ctx.respond("Retrieved the latest woody-grade translations!", ephemeral=True)
 
 
+# =============== Load TLs command =============
 @bot.slash_command(description="Load TLs")
 async def load_tls(ctx, boss):
     message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
@@ -538,6 +539,72 @@ async def load_tls(ctx, boss):
     print(f'Total time to load: {end_time-start_time}')
     await ctx.respond(f"Loaded TLs for boss: {boss}", ephemeral=True)
 
+
+# =============== Recommend allocation command =============
+@bot.slash_command(guild_ids=guild_ids.values(), description="Recommends a three team allocation")
+async def recommend_allocation(ctx, user,
+        boss_focus: Option(int, "Must include this boss in the allocation", min_value=1, max_value=5, required=False, default=None),
+        manual: Option(bool, "Include manual TLs in this recommendation", required=False, default=True),
+        show: Option(bool, "Show this recommendation to everyone", required=False, default=False)
+        ):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    embed = discord.Embed(
+        title=f"Allocation recommendations for {user.capitalize()}",
+        description="Eating pudding while doing homework leads to better results.",
+        color=0xfffeff
+    )
+    homework = Homework(user, None, None)
+    if not homework.roster_box:
+        await ctx.respond(f'Could not find a roster for user {user}. Please make sure you are matching your username on the roster sheet EXACTLY.', ephemeral=True)
+        return
+
+    max_allocs = homework.get_recommended_allocs(no_manual= not manual, boss_preference=boss_focus)
+    counter = 0
+    print(max_allocs)
+    for i in range(len(max_allocs)):
+        alloc = max_allocs[i]
+        boss_excluded = alloc[3]
+        '''if boss_focus and i == boss_focus:
+            continue'''
+        if not alloc or not alloc[1]:
+            embed.add_field(
+                name=f'Exclude Boss {i}',
+                value='There are no possible allocations.',
+                inline=False
+            )
+            continue
+        comp_description = ""
+        total_score = 0
+        for comp in alloc[1]:
+            total_score += convert_ev_to_float(comp.ev) * score_multipliers[comp.boss]
+            unit_display = []
+            for unit in comp.units:
+                re_unit = clean_text(unit)
+                if re_unit in icon_bank:
+                    unit_display.append(icon_bank[re_unit])
+                else:
+                    unit_display.append(unit + ',')
+            comp_description += (f'{comp.tl_code}: ' +
+                                 ' '.join(unit_display) +
+                                 f', EV: {comp.ev}')
+            if comp.borrow:
+                re_borrow = clean_text(comp.borrow)
+                if re_borrow in icon_bank:
+                    comp_description += (f', Borrow: {icon_bank[re_borrow]}\n')
+                else:
+                    comp_description += (f', Borrow: {re_borrow.capitalize()}\n')
+            else:
+                comp_description += '\n'
+
+        comp_description += f'Total EV: {round(alloc[2], 2)}m, Total Score: {round(total_score, 2)}m'
+
+        print(comp_description)
+        embed.add_field(
+            name="Max Damage Allocation" if not boss_excluded else f'Allocation Excluding Boss {boss_excluded}',
+            value=comp_description,
+            inline=False
+        )
+    await ctx.respond(embed=embed, ephemeral=not show)
 
 # =============== Help command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Get a description of all commands")
@@ -593,7 +660,14 @@ async def help(ctx):
 
     embed.add_field(
         name="/evaluate_homework - Shames people who haven't done homework.",
-        value="chorry (Optional): Get evaluation for chorry instead of worry",
+        value="```chorry (Optional): Get evaluation for chorry instead of worry```",
+        inline=False)
+
+    embed.add_field(
+        name="/recommend_allocation - Recommends you a three team allocation for cb",
+        value="```user: Your username, make sure this matches EXACTLY to the name on the roster sheet" +
+            "\nmanual (Optional): Include manual TLs in your allocation" +
+            "\nboss_focus (Optional): Guarantees this boss in your allocation```",
         inline=False)
 
     await ctx.respond(embed=embed, ephemeral=True)

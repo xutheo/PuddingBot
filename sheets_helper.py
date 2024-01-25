@@ -1,7 +1,7 @@
 import pygsheets
 from clan_battle_info import (translation_sheet_id, sheet_id, test_sheet_id, dtier_sheet_ids,
                               dtier_simple_sheet_id, dtier_ots_id, homework_sheet_id,
-                              homework_sheet_gid, chorry_homework_sheet_id)
+                              homework_sheet_gid, chorry_homework_sheet_id, roster_sheet_id, chorry_roster_sheet_id)
 from icon_bank import clean_text
 
 # Auth things with gsheets
@@ -80,3 +80,18 @@ def get_homework_worksheet(chorry=False):
 
     sheets = gc.open_by_key(homework_sheet_id)
     return sheets.worksheet(property='id', value=homework_sheet_gid)
+
+
+def get_roster_worksheet(user):
+    sheets_wksht = None
+    not_special_users = user.lower() != 'sariel' and user.lower() != 'avatar' and user.lower() != 'ark'
+    try:
+        sheets = gc.open_by_key(roster_sheet_id if not_special_users else chorry_roster_sheet_id)
+        sheets_wksht = sheets.worksheet(property='title', value=user)
+    except:
+        try:
+            sheets = gc.open_by_key(chorry_roster_sheet_id if not_special_users else roster_sheet_id)
+            sheets_wksht = sheets.worksheet(property='title', value=user)
+        except:
+            print("Could not find user in either roster sheet")
+    return sheets_wksht
