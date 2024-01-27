@@ -212,30 +212,23 @@ def load_to_db(boss, clear=False):
         timelines[tl_data2[0][0]] = Timeline(tl_data2, boss, tl_cell_tuple, True, True)
 
 
-def load_to_db_thread(boss):
-    while load_to_db_lock.locked():
-        print(f"Loading is locked, trying again later for boss {boss}")
-        time.sleep(30)  # Sleep for 30 seconds if locked
-
-    load_to_db_lock.acquire(timeout=120)
-    print(f"Loading for boss {boss}")
-    load_to_db(boss)
-    load_to_db_lock.release()
-    threading.Timer(1800, load_to_db_thread, [boss]).start()
-
-
-def background_load_to_db():
-    RUNTIME_BUFFER = 30
-    RUNTIME_DELAY = 360
-    load_to_db_thread(1)
-    time.sleep(RUNTIME_DELAY + RUNTIME_BUFFER)
-    load_to_db_thread(2)
-    time.sleep(RUNTIME_DELAY + RUNTIME_BUFFER)
-    load_to_db_thread(3)
-    time.sleep(RUNTIME_DELAY + RUNTIME_BUFFER)
-    load_to_db_thread(4)
-    time.sleep(RUNTIME_DELAY + RUNTIME_BUFFER)
-    load_to_db_thread(5)
+def background_load_tl():
+    while True:
+        print('Background saving boss 1')
+        load_to_db(1)
+        time.sleep(120)
+        print('Background saving boss 2')
+        load_to_db(2)
+        time.sleep(120)
+        print('Background saving boss 3')
+        load_to_db(3)
+        time.sleep(120)
+        print('Background saving boss 4')
+        load_to_db(4)
+        time.sleep(120)
+        print('Background saving boss 5')
+        load_to_db(5)
+        time.sleep(120)
 
 
 def get_from_db(boss, id):

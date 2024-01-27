@@ -4,7 +4,7 @@ import sheets_helper
 from sheets_helper import get_homework_worksheet
 from Timelines import get_single_boss_timelines_from_db, sqlitedict_base_path
 from icon_bank import clean_text, shorten_name
-#import time
+from time import sleep
 
 class Composition:
     def __init__(self, units, tl_code, ev, borrow=None):
@@ -468,7 +468,22 @@ def save_homework(chorry):
         homework['worry'] = hw
 
 
-save_homework(False)
+def background_save_homework():
+    first_run = True
+    while True:
+        if first_run:
+            # Extra delay to desync from other load thread
+            sleep(60)
+            first_run = False
+        print('Background saving homework sheet for worry')
+        save_homework(False)
+        sleep(360)
+        print('Background saving homework sheet for chorry')
+        save_homework(True)
+        sleep(360)
+
+
+#save_homework(False)
 #load_roster('all', False)
 #print(get_roster('zalteo'))
 #hw = Homework('ErnLe', None, None)

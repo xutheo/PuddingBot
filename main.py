@@ -13,11 +13,13 @@ from embed_helpers import get_display_embeds_compact, get_display_embeds, GetTLV
 from functools import partial
 from clan_battle_info import boss_names, boss_image_urls, score_multipliers
 import re
-from threading import Thread
 from icon_bank import icon_bank, clean_text
 import difflib
-from Homework import get_homework, Homework, convert_ev_to_float, get_roster, load_roster_from_sheets, save_homework
+from Homework import get_homework, convert_ev_to_float, get_roster, load_roster_from_sheets, save_homework, background_save_homework
 import time
+from concurrent.futures import ThreadPoolExecutor
+
+executor = ThreadPoolExecutor(2)
 
 tabulate.PRESERVE_WHITESPACE = True
 
@@ -799,8 +801,8 @@ async def help(ctx):
 
     await ctx.respond(embed=embed, ephemeral=True)
 
-#load_to_db_thread = Thread(target=Timelines.background_load_to_db)
-#load_to_db_thread.start()
+executor.submit(Timelines.background_load_tl)
+executor.submit(background_save_homework)
 
 keep_alive()
 token = json.load(open("service_account.json"))['discord_token']
