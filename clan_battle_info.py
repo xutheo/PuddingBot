@@ -1,9 +1,9 @@
 boss_image_urls = {
-    1: "https://redive.estertion.win/icon/unit/319600.webp",
-    2: "https://redive.estertion.win/icon/unit/316600.webp",
-    3: "https://redive.estertion.win/icon/unit/304800.webp",
-    4: "https://redive.estertion.win/icon/unit/311200.webp",
-    5: "https://redive.estertion.win/icon/unit/300400.webp"
+    1: "https://redive.estertion.win/icon/unit/312500.webp",
+    2: "https://redive.estertion.win/icon/unit/304600.webp",
+    3: "https://redive.estertion.win/icon/unit/304500.webp",
+    4: "https://redive.estertion.win/icon/unit/301100.webp",
+    5: "https://redive.estertion.win/icon/unit/302900.webp"
 }
 
 boss_names = {

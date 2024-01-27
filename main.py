@@ -16,7 +16,7 @@ import re
 from threading import Thread
 from icon_bank import icon_bank, clean_text
 import difflib
-from Homework import get_homework, Homework, convert_ev_to_float
+from Homework import get_homework, Homework, convert_ev_to_float, get_roster, load_roster_from_sheets, save_homework
 import time
 
 tabulate.PRESERVE_WHITESPACE = True
@@ -67,6 +67,7 @@ channel_ids = {1002644143589302352:
                    }  # Startend Channels
                }  # Channel ids
 non_display_channel_ids = {"bot-dev": 1141149506021367849}
+restricted_role_ids = [1200589687623004291, 1025781797696581754, 1025780684574433390]
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("."))
 
 
@@ -76,6 +77,13 @@ def is_allowed_channel(guild_id, channel_id):
         allowed_channels = ", ".join(channel_ids[guild_id].keys())
         return f"Please use this command in the guild cb channels: {allowed_channels}"
     return None
+
+
+def is_allowed_role(role_ids):
+    for role_id in role_ids:
+        if role_id in restricted_role_ids:
+            return True
+    return False
 
 
 async def convert_and_translate_timeline(tl, translate=True):
@@ -384,37 +392,6 @@ async def animation_cancel_unit_names(ctx,show: Option(bool, "Show this to every
 
     await ctx.respond(embed=embed, ephemeral=(not show))
 
-    ''' embed = discord.Embed(title="Units With Animation Cancel", description="Unit Names With Animation Cancel",
-                          color=0xfffeff)
-    bad_names = []
-    names_bank = animation_bank
-
-    if True:
-        for i in names_bank:
-            if not any(i in j for j in translation_mapping):
-                bad_names.append(i)
-    else:
-        bad_names = names_bank
-
-    if len(bad_names) == 0:
-        await ctx.respond("No characters with messed up names found.")
-
-    bad_names = [bad_names[i:i + (len(bad_names) // 3)] for i in range(0, len(bad_names), len(bad_names) // 3)]
-    print(bad_names)
-    for i in range(3):
-        if len(bad_names) == 4:
-            print("hi")
-            if len(bad_names[3]) > 1 and (i == 1):
-                bad_names[i].append(bad_names[3][1])
-            elif i == 0:
-                bad_names[i].append(bad_names[3][0])
-        embed.add_field(
-            name="",
-            value="\n".join(bad_names[i]),
-            inline=True)
-
-    await ctx.respond(embed=embed, ephemeral=(not show))'''
-
 
 # =============== Homework Command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Evaluates homework for the clan")
@@ -430,7 +407,8 @@ async def evaluate_homework(ctx,
         description="Shame these slackers!",
         color=0xfffeff
     )
-    homework = get_homework(chorry)
+    homework = get_homework(chorry, cache=False)
+    save_homework(chorry)
     display_string = ''
     any_conflicts = False
     fields = 0
@@ -543,6 +521,7 @@ async def load_tls(ctx, boss):
 # =============== Recommend allocation command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Recommends a three team allocation")
 async def recommend_allocation(ctx, user,
+        same_boss_alloc: Option(bool, "Allows an allocation with multiple comps for the same boss", required=False, default=False),
         boss_focus: Option(int, "Must include this boss in the allocation", min_value=1, max_value=5, required=False, default=None),
         manual: Option(bool, "Include manual TLs in this recommendation", required=False, default=True),
         show: Option(bool, "Show this recommendation to everyone", required=False, default=False)
@@ -553,12 +532,17 @@ async def recommend_allocation(ctx, user,
         description="Eating pudding while doing homework leads to better results.",
         color=0xfffeff
     )
-    homework = Homework(user, None, None)
-    if not homework.roster_box:
+    start = time.time()
+    homework = get_roster(user)
+    time_for_roster_sheet = time.time()
+    print(time_for_roster_sheet - start)
+    if not homework or not homework.roster_box:
         await ctx.respond(f'Could not find a roster for user {user}. Please make sure you are matching your username on the roster sheet EXACTLY.', ephemeral=True)
         return
 
-    max_allocs = homework.get_recommended_allocs(no_manual= not manual, boss_preference=boss_focus)
+    max_allocs = homework.get_recommended_allocs(no_manual= not manual, boss_preference=boss_focus, same_boss_alloc=same_boss_alloc)
+    time_for_allocs = time.time()
+    print(time_for_allocs - time_for_roster_sheet)
     counter = 0
     print(max_allocs)
     for i in range(len(max_allocs)):
@@ -605,6 +589,136 @@ async def recommend_allocation(ctx, user,
             inline=False
         )
     await ctx.respond(embed=embed, ephemeral=not show)
+
+# =============== Change allocation command =============
+@bot.slash_command(guild_ids=guild_ids.values(), description="Recommends a three team allocation")
+async def change_allocation(ctx,
+        target_tl: Option(str, "Target TL you want to convert to"),
+        chorry: Option(bool, "Change for Chorry instead of Worry", required=False, default=False),
+        show: Option(bool, "Show this recommendation to everyone", required=False, default=False)
+        ):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
+    #await ctx.defer()
+
+    timeline = Timelines.get_from_db(target_tl[1], target_tl)
+    if not timeline:
+        await ctx.respond("Please put in a valid TL code for target TL", ephemeral=not show)
+        return
+
+    def getBaseEmbed():
+        embed = discord.Embed(
+            title=f"Users that can change their allocation to {target_tl}",
+            description="Units could be un-built for this conversion!",
+            color=0xfffeff
+        )
+        return embed
+
+    embeds = [getBaseEmbed()]
+    start = time.time()
+    all_homework = get_homework(chorry, cache=True)
+    #homework_time = time.time()
+    #print(f'homework_time: {homework_time - start}')
+    character_count = 0
+    cur_embed_idx = 0
+    for hw in all_homework:
+        roster = get_roster(hw.user)
+        if not roster:
+            continue
+        hw.roster_box = roster.roster_box
+        homework_time1 = time.time()
+        #print(f'valid_alloc_time-1: {homework_time1 - start}')
+        valid_allocs = hw.get_valid_converted_alloc(target_tl, same_boss_alloc=True)
+        homework_time2 = time.time()
+        #print(f'valid_alloc_time: {homework_time2 - homework_time1}')
+        if valid_allocs and len(valid_allocs) > 0:
+            comp_description = ''
+            for valid_alloc in valid_allocs:
+                homework_time = time.time()
+                #print(f'valid_alloc_time2: {homework_time - start}')
+                convert_from = valid_alloc[0]
+                boss = int(convert_from[1])
+                timeline = Timelines.get_from_db(boss, convert_from)
+                unit_display = []
+                if not timeline:
+                    continue
+
+                for unit in timeline.units:
+                    re_unit = clean_text(unit.name)
+                    if re_unit in icon_bank:
+                        unit_display.append(icon_bank[re_unit])
+                    else:
+                        unit_display.append(unit + ',')
+                comp_description += (f'{convert_from}:' +
+                                     ''.join(unit_display) + ' --> ')
+                alloc = valid_alloc[1]
+                for comp in alloc[1]:
+                    if comp.tl_code != target_tl:
+                        continue
+                    unit_display = []
+                    for unit in comp.units:
+                        re_unit = clean_text(unit)
+                        if re_unit in icon_bank:
+                            unit_display.append(icon_bank[re_unit])
+                        else:
+                            unit_display.append(unit + ',')
+                    comp_description += (f'{comp.tl_code}:' +
+                                         ''.join(unit_display))
+                    if comp.borrow:
+                        re_borrow = clean_text(comp.borrow)
+                        if re_borrow in icon_bank:
+                            comp_description += (f' Borrow: {icon_bank[re_borrow]}\n')
+                        else:
+                            comp_description += (f' Borrow: {re_borrow.capitalize()}\n')
+                    else:
+                        comp_description += '\n'
+                    break
+            if len(comp_description) > 0:
+                name = f'Possible conversions for {hw.user}'
+                if character_count + len(comp_description) + len(name) > 5800:
+                    embeds.append(getBaseEmbed())
+                    cur_embed_idx += 1
+                    character_count = 0
+
+                character_count += len(comp_description) + len(name)
+                #print(character_count)
+                embeds[cur_embed_idx].add_field(
+                    name=f'Possible conversions for {hw.user}',
+                    value=comp_description,
+                    inline=False
+                )
+        '''if valid_alloc and len(valid_alloc) > 0:
+            all_possible_converters.append(valid_alloc)'''
+
+    view = GetTLView(embeds)
+    end = time.time()
+    print(f"Total time to calculate allocation changes: {end - start}")
+    await ctx.respond(embed=embeds[0], ephemeral=(not show), view=view if len(embeds) > 1 else None)
+    #print(all_possible_converters)
+
+
+# =============== Load TLs command =============
+@bot.slash_command(guild_ids=guild_ids.values(), description="Load roster boxes for all members (EXPENSIVE operation PLEASE do NOT run more than once)")
+async def load_roster(ctx, user,
+                      chorry: Option(bool, "Load for Chorry instead of Worry", required=False, default=False)):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
+
+    role_ids = [role.id for role in ctx.author.roles]
+    if user == 'all' and not is_allowed_role(role_ids):
+        await ctx.respond("You must be an admin to be able to load roster boxes for all users!")
+
+    start_time = time.time()
+    await ctx.defer()
+    load_roster_from_sheets(user, chorry)
+    end_time = time.time()
+    print(f'Total time to load: {end_time-start_time}')
+    await ctx.respond(f"Loaded Rosters for {user}", ephemeral=True)
+
 
 # =============== Help command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Get a description of all commands")
@@ -668,6 +782,19 @@ async def help(ctx):
         value="```user: Your username, make sure this matches EXACTLY to the name on the roster sheet" +
             "\nmanual (Optional): Include manual TLs in your allocation" +
             "\nboss_focus (Optional): Guarantees this boss in your allocation```",
+        inline=False)
+
+    embed.add_field(
+        name="/change_allocation - Finds all users who can change to a target TL",
+        value="```user: Your username, make sure this matches EXACTLY to the name on the roster sheet" +
+            "\ntarget_tl: TL that you want to convert to```" +
+            "\nchorry (Optional): Gets conversion for chorry instead of worry",
+        inline=False)
+
+    embed.add_field(
+        name="/load_roster - Loads a roster box from sheets",
+        value="```user: Your username, make sure this matches EXACTLY to the name on the roster sheet" +
+            "\nchorry (Optional): loads for chorry instead of worry",
         inline=False)
 
     await ctx.respond(embed=embed, ephemeral=True)

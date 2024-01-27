@@ -36,7 +36,7 @@ def get_animation_videos():
         if row[4].strip():
             mapping[clean_text(row[4])] = row[5].strip().split(";;;")
             skills_raw.append(row[5].strip())
-    print(mapping)
+    #print(mapping)
     return mapping
 get_animation_videos()
 
@@ -85,6 +85,8 @@ def get_homework_worksheet(chorry=False):
 def get_roster_worksheet(user):
     sheets_wksht = None
     not_special_users = user.lower() != 'sariel' and user.lower() != 'avatar' and user.lower() != 'ark'
+    if user.lower() == 'dbonks':
+        user = 'dBONKs'
     try:
         sheets = gc.open_by_key(roster_sheet_id if not_special_users else chorry_roster_sheet_id)
         sheets_wksht = sheets.worksheet(property='title', value=user)
@@ -94,4 +96,17 @@ def get_roster_worksheet(user):
             sheets_wksht = sheets.worksheet(property='title', value=user)
         except:
             print("Could not find user in either roster sheet")
+    return sheets_wksht
+
+
+def get_roster_worksheet_by_idx(idx, chorry=False):
+    sheets_wksht = None
+    if not chorry:
+        sheets = gc.open_by_key(roster_sheet_id)
+        sheets_wksht = sheets.worksheet(property='index', value=idx)
+        if sheets_wksht.title.lower() == 'sariel' or sheets_wksht.title.lower() == 'avatar' or sheets_wksht.title.lower() == 'ark':
+            return None
+    else:
+        sheets = gc.open_by_key(chorry_roster_sheet_id)
+        sheets_wksht = sheets.worksheet(property='index', value=idx)
     return sheets_wksht

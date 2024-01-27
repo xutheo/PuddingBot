@@ -1,6 +1,8 @@
+import pygsheets.exceptions
+from sqlitedict import SqliteDict
 import sheets_helper
 from sheets_helper import get_homework_worksheet
-from Timelines import get_single_boss_timelines_from_db
+from Timelines import get_single_boss_timelines_from_db, sqlitedict_base_path
 from icon_bank import clean_text, shorten_name
 #import time
 
@@ -74,7 +76,7 @@ class Homework:
 
     BETWEEN_COMPS_ROW_OFFSET = 6
 
-    def __init__(self, user, homework_grid=None, roster_box=None):
+    def __init__(self, user, homework_grid=None, roster_box=None, sheet=None):
         self.user = user
         if homework_grid:
             comp1_units = []
@@ -103,7 +105,7 @@ class Homework:
             if roster_box:
                 self.roster_box = roster_box
             else:
-                self.load_units_available()
+                self.load_units_available(sheet)
 
     '''
     Evaluates the homework provided by the user in the google sheet and checks if it a possible allocation
@@ -159,14 +161,16 @@ class Homework:
                         unit_counts[unit.name] += 1'''
         return possible_comps
 
-    def load_units_available(self):
+    def load_units_available(self, sheet):
         roster_start_tuple = (4, 2)
         roster_end_tuple = (254, 5)
+        roster_worksheet = sheet
 
-        roster_worksheet = sheets_helper.get_roster_worksheet(self.user if self.user[0].isupper() else self.user.capitalize())
-        if not roster_worksheet:
-            self.roster_box = None
-            return
+        if not sheet:
+            roster_worksheet = sheets_helper.get_roster_worksheet(self.user if self.user[0].isupper() else self.user.capitalize())
+            if not roster_worksheet:
+                self.roster_box = None
+                return
 
         self.roster_box = {}
         units_available = roster_worksheet.get_values(roster_start_tuple, roster_end_tuple)
@@ -187,14 +191,14 @@ class Homework:
     Therefore max operations possible is 10*10*10*10*150 = 1500000
     This is very low and in fact retrieving google sheets takes more time than this method.
     '''
-    def get_all_possible_allocs(self, possible_comps):
+    def get_all_possible_allocs(self, possible_comps, same_boss_alloc=False):
         allocs = []
         for boss1 in range(1, 6):
-            for boss2 in range(boss1+1, 6):
-                if boss1 >= boss2:
+            for boss2 in range(1, 6):
+                if not same_boss_alloc and boss1 >= boss2:
                     continue
-                for boss3 in range(boss2+1, 6):
-                    if boss2 >= boss3:
+                for boss3 in range(1, 6):
+                    if not same_boss_alloc and boss2 >= boss3:
                         continue
                     for comp1 in possible_comps[boss1]:
                         for comp2 in possible_comps[boss2]:
@@ -209,12 +213,12 @@ class Homework:
         return allocs
 
 
-    def get_recommended_allocs(self, no_manual=False, boss_preference=None):
+    def get_recommended_allocs(self, no_manual=False, boss_preference=None, same_boss_alloc=False):
         #start = time.time()
         possible_comps = self.get_possible_comps(no_manual)
         #get_possible_comps_time = time.time()
         #print(get_possible_comps_time - start)
-        allocs = self.get_all_possible_allocs(possible_comps)
+        allocs = self.get_all_possible_allocs(possible_comps, same_boss_alloc)
         #get_all_possible_allocs_time = time.time()
         #print(get_all_possible_allocs_time-get_possible_comps_time)
         allocs.sort(key=lambda x: -x[2])
@@ -236,12 +240,6 @@ class Homework:
         #get_recommended_allocs_time = time.time()
         #print(get_recommended_allocs_time-get_all_possible_allocs_time)
         return return_allocs
-        '''elif boss_preference:
-            max_alloc = self.get_max_alloc_for_boss(boss_preference, allocs)
-            return max_alloc
-        else:
-            allocs.sort(key = lambda x: -x[2])
-            return allocs[-1]'''
 
 
     def get_max_alloc_for_boss(self, exclude_boss, allocs, boss_focus=None):
@@ -249,6 +247,8 @@ class Homework:
         max_alloc = None
         for alloc in allocs:
             alloc_bosses = [comp.boss for comp in alloc[1]]
+            if 'D504' in alloc[0] or 'D505' in alloc[0]:
+                continue
             if exclude_boss in alloc_bosses:
                 continue
             if boss_focus and boss_focus not in alloc_bosses:
@@ -310,6 +310,72 @@ class Homework:
 
         return broad_check and special_checks
 
+
+    def satisfies_filters(self, alloc, tl_filters):
+        satisfies_filters = True
+        for tl_filter in tl_filters[1]:
+            tl_code_split = alloc[0].split(',')
+            if tl_filter not in tl_code_split:
+                satisfies_filters = False
+                break
+        return satisfies_filters
+
+    def get_valid_converted_alloc(self, tl, no_manual=False, same_boss_alloc=False):
+        valid_allocs = []
+
+        # TL already allocated, cannot convert
+        if tl in [self.comp1.tl_code, self.comp2.tl_code, self.comp3.tl_code]:
+            return None
+
+        if not same_boss_alloc and tl[1] in [self.comp1.tl_code[1], self.comp2.tl_code[1], self.comp3.tl_code[1]]:
+            return None
+
+        possible_comps = self.get_possible_comps(no_manual)
+        allocs = self.get_all_possible_allocs(possible_comps)
+        tl_filters1 = None
+        tl_filters2 = None
+        tl_filters3 = None
+        if self.comp3.tl_code[1] != tl[1]:
+            tl_filters1 = (self.comp3.tl_code, [tl, self.comp1.tl_code, self.comp2.tl_code])
+        if self.comp1.tl_code[1] != tl[1]:
+            tl_filters2 = (self.comp1.tl_code, [tl, self.comp2.tl_code, self.comp3.tl_code])
+        if self.comp2.tl_code[1] != tl[1]:
+            tl_filters3 = (self.comp2.tl_code, [tl, self.comp1.tl_code, self.comp3.tl_code])
+
+        for alloc in allocs:
+            if tl_filters1 and self.satisfies_filters(alloc, tl_filters1):
+                valid_allocs.append((tl_filters1[0], alloc))
+            if tl_filters2 and self.satisfies_filters(alloc, tl_filters2):
+                valid_allocs.append((tl_filters2[0], alloc))
+            if tl_filters3 and self.satisfies_filters(alloc, tl_filters3):
+                valid_allocs.append((tl_filters3[0], alloc))
+
+        '''excluded_comp = self.comp3.tl_code
+        if excluded_comp[1] != tl[1]:
+            tl_filters = [tl, self.comp1.tl_code, self.comp2.tl_code]
+            valid_alloc = self.get_allocs(tl_filters=tl_filters)
+            if valid_alloc:
+                valid_allocs.append((excluded_comp, valid_alloc))
+
+        excluded_comp = self.comp1.tl_code
+        if excluded_comp[1] != tl[1]:
+            tl_filters = [tl, self.comp2.tl_code, self.comp3.tl_code]
+            valid_alloc = self.get_allocs(tl_filters=tl_filters)
+            if valid_alloc:
+                valid_allocs.append((excluded_comp, valid_alloc))
+
+        excluded_comp = self.comp2.tl_code
+        if excluded_comp[1] != tl[1]:
+            tl_filters = [tl, self.comp1.tl_code, self.comp3.tl_code]
+            valid_alloc = self.get_allocs(tl_filters=tl_filters)
+            if valid_alloc:
+                valid_allocs.append((excluded_comp, valid_alloc))'''
+
+        return valid_allocs
+
+    def __str__(self):
+        return f"User: {self.user}\nRoster Box: {self.roster_box}"
+
 def construct_homework_grid(i, j, values):
     COL_OFFSET = 12
     ROW_OFFSET = 21
@@ -321,18 +387,22 @@ def construct_homework_grid(i, j, values):
     return user, grid
 
 
-def get_homework(chorry=False):
-    hw_wksht = get_homework_worksheet(chorry)
-    values = hw_wksht.get_all_values()
+def get_homework(chorry=False, cache=False):
+    if not cache:
+        hw_wksht = get_homework_worksheet(chorry)
+        values = hw_wksht.get_all_values()
 
-    homework = []
-    for i in range(len(values)):
-        for j in range(len(values[i])):
-            if values[i][j] == '#':
-                user, grid = construct_homework_grid(i, j, values)
-                homework.append(Homework(user, grid))
+        homework = []
+        for i in range(len(values)):
+            for j in range(len(values[i])):
+                if values[i][j] == '#':
+                    user, grid = construct_homework_grid(i, j, values)
+                    homework.append(Homework(user, grid))
 
-    return homework
+        return homework
+    else:
+        homework = SqliteDict(sqlitedict_base_path + 'homework.sqlite', autocommit=True)
+        return homework['chorry' if chorry else 'worry']
 
 
 def convert_ev_to_float(ev):
@@ -344,5 +414,62 @@ def convert_ev_to_float(ev):
             break
     return float(ev_as_num)
 
+
+def load_roster_from_sheets(user, chorry):
+    rosters = SqliteDict(sqlitedict_base_path + 'rosters.sqlite', autocommit=True)
+
+    if chorry:
+        if 'chorry' in rosters:
+            rosters_dict = rosters['chorry']
+        else:
+            rosters_dict = {}
+    else:
+        if 'worry' in rosters:
+            rosters_dict = rosters['worry']
+        else:
+            rosters_dict = {}
+    if user == 'all':
+        roster_idx = 11
+        while True:
+            try:
+                sht = sheets_helper.get_roster_worksheet_by_idx(roster_idx, chorry)
+                if sht:
+                    user = sht.title.lower()
+                    hw = Homework(sht.title, None, None, sht)
+                    print(hw)
+                    rosters_dict[user] = hw
+                roster_idx += 1
+            except pygsheets.exceptions.WorksheetNotFound:
+                break
+        for roster in rosters:
+            print(roster)
+    else:
+        hw = Homework(user, None, None)
+        rosters_dict[user.lower()] = hw
+    rosters['worry' if not chorry else 'chorry'] = rosters_dict
+
+def get_roster(user):
+    rosters = SqliteDict(sqlitedict_base_path + 'rosters.sqlite', autocommit=True)
+    #worry_roster = rosters['worry']
+    lowercase_user = user.lower()
+    if lowercase_user in rosters['worry']:
+        return rosters['worry'][lowercase_user]
+    if lowercase_user in rosters['chorry']:
+        return rosters['chorry'][lowercase_user]
+    return None
+
+
+def save_homework(chorry):
+    homework = SqliteDict(sqlitedict_base_path + 'homework.sqlite', autocommit=True)
+    hw = get_homework(chorry)
+    if chorry:
+        homework['chorry'] = hw
+    else:
+        homework['worry'] = hw
+
+
+save_homework(False)
+#load_roster('all', False)
+#print(get_roster('zalteo'))
 #hw = Homework('ErnLe', None, None)
 #print(hw.get_recommended_allocs(boss_preference=3))
