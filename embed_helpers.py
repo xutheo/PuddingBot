@@ -358,25 +358,31 @@ def get_display_embeds_compact(timeline, ot=False):
 
 
 def convert_time_to_seconds(time_string):
-    time_split = time_string.split(':')
-    time_in_seconds = 0
-    if len(time_split) == 2:
-        time_in_seconds += 60 * int(time_split[0]) + int(time_split[1])
-    else:
-        time_in_seconds += int(time_split[0])
-    return time_in_seconds
+    try:
+        time_split = time_string.split(':')
+        time_in_seconds = 0
+        if len(time_split) == 2:
+            time_in_seconds += 60 * int(time_split[0]) + int(time_split[1])
+        else:
+            time_in_seconds += int(time_split[0])
+        return time_in_seconds
+    except:
+        return None
 
 
 def convert_time_to_string(time_in_seconds):
-    minutes = time_in_seconds // 60
-    seconds = time_in_seconds % 60
-    if minutes == 0:
-        return str(seconds)
-    else:
-        if seconds < 10:
-            return str(minutes) + ":0" + str(seconds)
+    try:
+        minutes = time_in_seconds // 60
+        seconds = time_in_seconds % 60
+        if minutes == 0:
+            return str(seconds)
         else:
-            return str(minutes) + ":" + str(seconds)
+            if seconds < 10:
+                return str(minutes) + ":0" + str(seconds)
+            else:
+                return str(minutes) + ":" + str(seconds)
+    except:
+        return None
 
 
 def convert_time_with_ot(ot, time):
@@ -388,6 +394,8 @@ def convert_time_with_ot(ot, time):
         if len(two_time_split) == 2:
             first_time_in_seconds = convert_time_to_seconds(two_time_split[0])
             second_time_in_seconds = convert_time_to_seconds(two_time_split[1])
+            if not first_time_in_seconds or not second_time_in_seconds:
+                return time
             if first_time_in_seconds - offset <= 0:
                 return "-1"
             first_time_string = convert_time_to_string(first_time_in_seconds - offset)
@@ -395,6 +403,8 @@ def convert_time_with_ot(ot, time):
             return f"{first_time_string}-{second_time_string}"
         else:
             time_in_seconds = convert_time_to_seconds(time)
+            if not time_in_seconds:
+                return time
             if time_in_seconds - offset <= 0:
                 return "-1"
             time = convert_time_to_string(time_in_seconds - offset)

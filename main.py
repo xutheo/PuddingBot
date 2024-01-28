@@ -11,15 +11,19 @@ import os
 from discord.ui import Button, View
 from embed_helpers import get_display_embeds_compact, get_display_embeds, GetTLView, get_display_embeds2
 from functools import partial
-from clan_battle_info import boss_names, boss_image_urls, score_multipliers
+from clan_battle_info import boss_names, boss_image_urls, score_multipliers, roster_users
 import re
 from icon_bank import icon_bank, clean_text
 import difflib
 from Homework import get_homework, convert_ev_to_float, get_roster, load_roster_from_sheets, save_homework, background_save_homework
 import time
 from concurrent.futures import ThreadPoolExecutor
+import datetime
+from sqlitedict import SqliteDict
+from time import sleep
+import asyncio
 
-executor = ThreadPoolExecutor(2)
+executor = ThreadPoolExecutor(3)
 
 tabulate.PRESERVE_WHITESPACE = True
 
@@ -61,6 +65,7 @@ channel_ids = {1002644143589302352:
                     "chorry-boss-4": 1056083259672498206,
                     "chorry-boss-5": 1056083315142164510,
                     "chorry-announcements": 1025781292031299604,
+                    "discussion": 1131632662331805788,
                    },  # Worry/Chorry Channels
                805006358138585128:
                    {
@@ -149,6 +154,7 @@ async def get_tl(
     mobile = ctx.author.is_on_mobile()
     print(mobile)
     #compact = False
+    id = id.upper()
 
     timeline = Timelines.get_from_db(boss, id)
     if timeline is None:
@@ -592,10 +598,31 @@ async def recommend_allocation(ctx, user,
         )
     await ctx.respond(embed=embed, ephemeral=not show)
 
+
+def get_score(hw):
+    total_score = 0
+    if hw.comp1:
+        actual_comp = Timelines.get_from_db(hw.comp1.boss, hw.comp1.tl_code)
+        total_score += convert_ev_to_float(actual_comp.ev) * score_multipliers[hw.comp1.boss]
+    if hw.comp2:
+        actual_comp = Timelines.get_from_db(hw.comp2.boss, hw.comp2.tl_code)
+        total_score += convert_ev_to_float(actual_comp.ev) * score_multipliers[hw.comp2.boss]
+    if hw.comp3:
+        actual_comp = Timelines.get_from_db(hw.comp3.boss, hw.comp3.tl_code)
+        total_score += convert_ev_to_float(actual_comp.ev) * score_multipliers[hw.comp3.boss]
+    return total_score
+
+def convert_to_roster_user(user):
+    if user in roster_users:
+        return roster_users[user]
+    return user
+
 # =============== Change allocation command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Recommends a three team allocation")
 async def change_allocation(ctx,
         target_tl: Option(str, "Target TL you want to convert to"),
+        same_boss_alloc: Option(bool, "Allows an allocation with multiple comps for the same boss", required=False, default=False),
+        improve_score: Option(bool, "Only displays changes that improve score", required=False, default=False),
         chorry: Option(bool, "Change for Chorry instead of Worry", required=False, default=False),
         show: Option(bool, "Show this recommendation to everyone", required=False, default=False)
         ):
@@ -626,18 +653,28 @@ async def change_allocation(ctx,
     character_count = 0
     cur_embed_idx = 0
     for hw in all_homework:
-        roster = get_roster(hw.user)
+        roster_user = convert_to_roster_user(hw.user)
+        roster = get_roster(roster_user)
+        current_score = get_score(hw)
         if not roster:
             continue
         hw.roster_box = roster.roster_box
         homework_time1 = time.time()
         #print(f'valid_alloc_time-1: {homework_time1 - start}')
-        valid_allocs = hw.get_valid_converted_alloc(target_tl, same_boss_alloc=True)
+        valid_allocs = hw.get_valid_converted_alloc(target_tl, same_boss_alloc=same_boss_alloc)
         homework_time2 = time.time()
         #print(f'valid_alloc_time: {homework_time2 - homework_time1}')
         if valid_allocs and len(valid_allocs) > 0:
             comp_description = ''
             for valid_alloc in valid_allocs:
+                alloc = valid_alloc[1]
+                if improve_score:
+                    new_score = 0
+                    for comp in alloc[1]:
+                        new_score += convert_ev_to_float(comp.ev) * score_multipliers[comp.boss]
+                    if new_score < current_score:
+                        continue
+
                 homework_time = time.time()
                 #print(f'valid_alloc_time2: {homework_time - start}')
                 convert_from = valid_alloc[0]
@@ -655,7 +692,7 @@ async def change_allocation(ctx,
                         unit_display.append(unit + ',')
                 comp_description += (f'{convert_from}:' +
                                      ''.join(unit_display) + ' --> ')
-                alloc = valid_alloc[1]
+
                 for comp in alloc[1]:
                     if comp.tl_code != target_tl:
                         continue
@@ -720,6 +757,69 @@ async def load_roster(ctx, user,
     end_time = time.time()
     print(f'Total time to load: {end_time-start_time}')
     await ctx.respond(f"Loaded Rosters for {user}", ephemeral=True)
+
+
+# =============== Load TLs command =============
+@bot.slash_command(guild_ids=[1002644143589302352, 1025780100291112960], description="Disband...")
+async def disband(ctx):
+    await ctx.defer()
+    await scrape_disband_messages()
+    disband_dict = SqliteDict(Timelines.sqlitedict_base_path + 'disband.sqlite', autocommit=True)
+    #disband_dict['count'] = 0
+    #disband_dict['disband_messages'] = []
+    #disband_dict['last_checked_time'] = {}
+
+    disband_messages_key = 'disband_messages'
+    count_key = 'count'
+    counter = 0
+    disband_messages = []
+    if count_key in disband_dict:
+        counter = disband_dict[count_key]
+    if disband_messages_key in disband_dict:
+        disband_messages = disband_dict[disband_messages_key]
+
+    color_code = 0x2E8B57
+    disband_ending_message = ''
+    if counter == 0:
+        disband_ending_message = "We're safe! No disband this CB! <:ArisaSmile:1027258760122617937>"
+    elif 0 < counter <= 5:
+        color_code = 0xffca4f
+        disband_ending_message = "Ehhhhh, woody is probably joking. We're fine! <:BorryWeird:1063225784128508035>"
+    elif 5 < counter <= 10:
+        color_code = 0xf28f0c
+        disband_ending_message = "We might've bbed a few times, but we can't possibly disband...right? <a:WorryDodgeFast:1026512767185854486>"
+    else:
+        color_code = 0xed5555
+        disband_ending_message = "It's over. This is the worst thing to happen to Priconne since EN EOS. <:SadWorryDab:1083579383563952158>"
+
+    embed = discord.Embed(
+        title=f"<:Puddisgust:1026691405797675100> Woody has tried disbanding _{counter}_ times this CB. <:Puddisgust:1026691405797675100>",
+        description=f'Disband threats in moderation are healthy for the clan.',
+        color=color_code
+    )
+
+    if counter != 0:
+        link_message_counter = 0
+        disband_messages.reverse()
+        disband_thread_message_links = ''
+        for disband_message in disband_messages:
+            link_message_counter += 1
+            disband_thread_message_links += f'_"{disband_message[2]}"_\n\t - Channel: {disband_message[1]} \n Circa <t:{int(disband_message[0].timestamp())}:d>\n\n'
+            if link_message_counter == 3:
+                break
+
+        embed.add_field(
+            name=f'Most recent attempts',
+            value=f'{disband_thread_message_links}\n',
+            inline=False
+        )
+
+    embed.add_field(
+        name=f'{disband_ending_message}',
+        value='',
+        inline=False
+    )
+    await ctx.respond(embed=embed, ephemeral=True)
 
 
 # =============== Help command =============
@@ -801,6 +901,70 @@ async def help(ctx):
 
     await ctx.respond(embed=embed, ephemeral=True)
 
+async def scrape_disband_messages():
+    disband_dict = SqliteDict(Timelines.sqlitedict_base_path + 'disband.sqlite', autocommit=True)
+    cb_start_time = datetime.datetime(2024, 1, 25, 8, tzinfo=datetime.timezone.utc)
+    cb_end_time = datetime.datetime(2024, 1, 29, 8, tzinfo=datetime.timezone.utc)
+
+    disband_messages_key = 'disband_messages'
+    count_key = 'count'
+    start_search_key = 'last_checked_time'
+
+    #disband_dict[disband_messages_key] = []
+    #disband_dict[start_search_key] = {}
+    #disband_dict[count_key] = 0
+    if count_key not in disband_dict:
+        disband_dict[count_key] = 0
+    if start_search_key not in disband_dict:
+        disband_dict[start_search_key] = {}
+    if disband_messages_key not in disband_dict:
+        disband_dict[disband_messages_key] = []
+
+    #1002644143589302352 - test-server
+    #152242204826533889 - zalteo
+    #1025780100291112960 - clan server
+    #416540817168007189 - woody
+    start_search_times = disband_dict[start_search_key]
+    counter = disband_dict[count_key]
+    disband_messages = disband_dict[disband_messages_key]
+    #print(f"current_counter: {counter}")
+    excluded_channels = [1025781269411397662,1025781292031299604]
+    for channel_id in channel_ids[1025780100291112960].values():
+        if channel_id in excluded_channels:
+            continue
+        #print(channel_id)
+        channel = bot.get_channel(channel_id)
+        start_search_time = cb_start_time
+        search_limit = 1000
+        if channel_id in start_search_times:
+            start_search_time = start_search_times[channel_id]
+            print(f"latest search time for channel {channel_id}: {start_search_times[channel_id]}")
+        async for message in channel.history(limit=search_limit, after=start_search_time, oldest_first=True):
+            if message.created_at > cb_end_time:
+                break
+            if message.author.id == 416540817168007189 and 'disband' in message.content.lower():
+                disband_messages.append((message.created_at, message.channel.name, message.content))
+                counter += 1
+            start_search_times[channel_id] = message.created_at
+        if channel_id in start_search_times:
+            print(f"latest search time for channel {channel_id}: {start_search_times[channel_id]}")
+
+    #print(f"after search current_counter: {counter}")
+    disband_messages = list(sorted(disband_messages, key=lambda x: x[0]))
+    disband_dict[disband_messages_key] = disband_messages
+    disband_dict[count_key] = counter
+    disband_dict[start_search_key] = start_search_times
+
+
+def background_save_disband_messages():
+    while True:
+        print('Background scraping for disband messages')
+        asyncio.run(scrape_disband_messages())
+        print('Finished background scraping for disband messages')
+        sleep(1357)
+
+
+#executor.submit(background_save_disband_messages)
 executor.submit(Timelines.background_load_tl)
 executor.submit(background_save_homework)
 

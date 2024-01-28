@@ -5,6 +5,7 @@ from sheets_helper import get_homework_worksheet
 from Timelines import get_single_boss_timelines_from_db, sqlitedict_base_path
 from icon_bank import clean_text, shorten_name
 from time import sleep
+from clan_battle_info import score_multipliers
 
 class Composition:
     def __init__(self, units, tl_code, ev, borrow=None):
@@ -191,25 +192,41 @@ class Homework:
     Therefore max operations possible is 10*10*10*10*150 = 1500000
     This is very low and in fact retrieving google sheets takes more time than this method.
     '''
-    def get_all_possible_allocs(self, possible_comps, same_boss_alloc=False):
+    def get_all_possible_allocs(self, possible_comps, same_boss_alloc=False, tl_filters = None):
         allocs = []
         for boss1 in range(1, 6):
             for boss2 in range(1, 6):
-                if not same_boss_alloc and boss1 >= boss2:
+                if same_boss_alloc and boss1 > boss2:
+                    continue
+                elif not same_boss_alloc and boss1 >= boss2:
                     continue
                 for boss3 in range(1, 6):
-                    if not same_boss_alloc and boss2 >= boss3:
+                    if same_boss_alloc and boss2 > boss3:
+                        continue
+                    elif not same_boss_alloc and boss2 >= boss3:
                         continue
                     for comp1 in possible_comps[boss1]:
                         for comp2 in possible_comps[boss2]:
+                            if int(comp1[1:]) >= int(comp2[1:]):
+                                continue
                             for comp3 in possible_comps[boss3]:
-                                alloc = [possible_comps[boss1][comp1], possible_comps[boss2][comp2], possible_comps[boss3][comp3]]
-                                if self.evaluate_alloc(alloc):
-                                    total_ev = 0
-                                    ids = ','.join([comp.tl_code for comp in alloc])
-                                    for comp in alloc:
-                                        total_ev += convert_ev_to_float(comp.ev)
-                                    allocs.append((ids, alloc, total_ev))
+                                if int(comp2[1:]) >= int(comp3[1:]):
+                                    continue
+                                satisfies_filter = True
+                                if tl_filters:
+                                    satisfies = False
+                                    for tl_filter in tl_filters:
+                                        if tl_filter and comp1 in tl_filter[1] and comp2 in tl_filter[1] and comp3 in tl_filter[1]:
+                                            satisfies = True
+                                    satisfies_filter = satisfies
+                                if satisfies_filter:
+                                    alloc = [possible_comps[boss1][comp1], possible_comps[boss2][comp2], possible_comps[boss3][comp3]]
+                                    if self.evaluate_alloc(alloc):
+                                        total_ev = 0
+                                        ids = ','.join([comp.tl_code for comp in alloc])
+                                        for comp in alloc:
+                                            total_ev += convert_ev_to_float(comp.ev)
+                                        allocs.append((ids, alloc, total_ev))
         return allocs
 
 
@@ -320,56 +337,47 @@ class Homework:
                 break
         return satisfies_filters
 
-    def get_valid_converted_alloc(self, tl, no_manual=False, same_boss_alloc=False):
+    def get_valid_converted_alloc(self, tl, no_manual=False, same_boss_alloc=True, improve_score=False):
         valid_allocs = []
 
         # TL already allocated, cannot convert
         if tl in [self.comp1.tl_code, self.comp2.tl_code, self.comp3.tl_code]:
             return None
 
-        if not same_boss_alloc and tl[1] in [self.comp1.tl_code[1], self.comp2.tl_code[1], self.comp3.tl_code[1]]:
-            return None
-
-        possible_comps = self.get_possible_comps(no_manual)
-        allocs = self.get_all_possible_allocs(possible_comps)
+        alloced_bosses = [self.comp1.tl_code[1], self.comp2.tl_code[1], self.comp3.tl_code[1]]
         tl_filters1 = None
         tl_filters2 = None
         tl_filters3 = None
-        if self.comp3.tl_code[1] != tl[1]:
+        tl_filters = []
+        if same_boss_alloc or tl[1] not in alloced_bosses:
             tl_filters1 = (self.comp3.tl_code, [tl, self.comp1.tl_code, self.comp2.tl_code])
-        if self.comp1.tl_code[1] != tl[1]:
             tl_filters2 = (self.comp1.tl_code, [tl, self.comp2.tl_code, self.comp3.tl_code])
-        if self.comp2.tl_code[1] != tl[1]:
             tl_filters3 = (self.comp2.tl_code, [tl, self.comp1.tl_code, self.comp3.tl_code])
+            tl_filters = [tl_filters1, tl_filters2, tl_filters3]
+        else:
+            if self.comp3.tl_code[1] == tl[1]:
+                tl_filters1 = (self.comp3.tl_code, [tl, self.comp1.tl_code, self.comp2.tl_code])
+                tl_filters.append(tl_filters1)
+            if self.comp1.tl_code[1] == tl[1]:
+                tl_filters2 = (self.comp1.tl_code, [tl, self.comp2.tl_code, self.comp3.tl_code])
+                tl_filters.append(tl_filters2)
+            if self.comp2.tl_code[1] == tl[1]:
+                tl_filters3 = (self.comp2.tl_code, [tl, self.comp1.tl_code, self.comp3.tl_code])
+                tl_filters.append(tl_filters3)
+        possible_comps = self.get_possible_comps(no_manual)
+        allocs = self.get_all_possible_allocs(possible_comps, same_boss_alloc, tl_filters)
+        #if self.user.lower() == 'zalteo':
+        #    print('zalteo')
 
         for alloc in allocs:
+            #if 'D45' in alloc[0]:
+            #    print('test')
             if tl_filters1 and self.satisfies_filters(alloc, tl_filters1):
                 valid_allocs.append((tl_filters1[0], alloc))
             if tl_filters2 and self.satisfies_filters(alloc, tl_filters2):
                 valid_allocs.append((tl_filters2[0], alloc))
             if tl_filters3 and self.satisfies_filters(alloc, tl_filters3):
                 valid_allocs.append((tl_filters3[0], alloc))
-
-        '''excluded_comp = self.comp3.tl_code
-        if excluded_comp[1] != tl[1]:
-            tl_filters = [tl, self.comp1.tl_code, self.comp2.tl_code]
-            valid_alloc = self.get_allocs(tl_filters=tl_filters)
-            if valid_alloc:
-                valid_allocs.append((excluded_comp, valid_alloc))
-
-        excluded_comp = self.comp1.tl_code
-        if excluded_comp[1] != tl[1]:
-            tl_filters = [tl, self.comp2.tl_code, self.comp3.tl_code]
-            valid_alloc = self.get_allocs(tl_filters=tl_filters)
-            if valid_alloc:
-                valid_allocs.append((excluded_comp, valid_alloc))
-
-        excluded_comp = self.comp2.tl_code
-        if excluded_comp[1] != tl[1]:
-            tl_filters = [tl, self.comp1.tl_code, self.comp3.tl_code]
-            valid_alloc = self.get_allocs(tl_filters=tl_filters)
-            if valid_alloc:
-                valid_allocs.append((excluded_comp, valid_alloc))'''
 
         return valid_allocs
 

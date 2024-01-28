@@ -44,3 +44,13 @@ homework_sheet_gid = '574547770'
 
 roster_sheet_id = '15GBJagkAmLY70IiXwxce5VKWeSOioDfVoxrU-MxpqBo'
 chorry_roster_sheet_id = '1upz1usqd3abQ07WSR0zXyJUVBsw6tQ9t08w8GFvv224'
+
+roster_users = {
+    'Dabomstew': 'dBONKs',
+    'Astordor': 'Altstordor',
+    'Dragonofhonor': 'Dragon',
+    'Fae': 'Faefeedge',
+    'Tomoeri': 'TomoP',
+    'Kami': 'Shirou',
+    'TakamoriXD': 'Takamori2'
+}
