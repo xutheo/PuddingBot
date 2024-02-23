@@ -1,3 +1,4 @@
+import Homework
 from keep_alive import keep_alive
 import discord
 from discord.ext import commands
@@ -11,7 +12,7 @@ import os
 from discord.ui import Button, View
 from embed_helpers import get_display_embeds_compact, get_display_embeds, GetTLView, get_display_embeds2
 from functools import partial
-from clan_battle_info import boss_names, boss_image_urls, score_multipliers, roster_users
+from clan_battle_info import boss_names, boss_image_urls, score_multipliers, cb_start_time, cb_end_time
 import re
 from icon_bank import icon_bank, clean_text
 import difflib
@@ -21,9 +22,11 @@ from concurrent.futures import ThreadPoolExecutor
 import datetime
 from sqlitedict import SqliteDict
 from time import sleep
+from Users import worry_users, chorry_users, mark_fc, get_fc_status, reset_fc_dicts, atc_start, atc_end, atc_status, reset_atc_dict
+from Metrics import save_metric_from_context, unload_metrics
 import asyncio
 
-executor = ThreadPoolExecutor(3)
+executor = ThreadPoolExecutor(2)
 
 tabulate.PRESERVE_WHITESPACE = True
 
@@ -38,6 +41,10 @@ guild_ids = {"Zalteo Test Server": 1002644143589302352,  # Zalteo Test Server
              "Zalteo Icon Bank": 1166119511376793661,  # Zalteo Icon Bank
              "Startend": 805006358138585128  # Startend
              }  # Server ids
+wc_guild_ids = {"Zalteo Test Server": 1002644143589302352,  # Zalteo Test Server
+                "Worry/Chorry": 1025780100291112960,  # Worry/Chorry
+                "Zalteo Icon Bank": 1166119511376793661,  # Zalteo Icon Bank
+                }
 channel_ids = {1002644143589302352:
                    {"super-private": 1067620591038889995,
                     "super-private-2": 1141152593683415060
@@ -66,6 +73,8 @@ channel_ids = {1002644143589302352:
                     "chorry-boss-5": 1056083315142164510,
                     "chorry-announcements": 1025781292031299604,
                     "discussion": 1131632662331805788,
+                    "pudding-help": 1201988712901394543,
+                    "clan-announcements": 1025782443388719205
                    },  # Worry/Chorry Channels
                805006358138585128:
                    {
@@ -131,6 +140,7 @@ async def translate_tl(
     if message:
         await ctx.respond(message)
         return
+    save_metric_from_context(ctx)
     timeline = await convert_and_translate_timeline(tl)
     embed = discord.Embed(title="Translated Timeline",
                         description=timeline,
@@ -150,6 +160,7 @@ async def get_tl(
     if message:
         await ctx.respond(message)
         return
+    save_metric_from_context(ctx)
     boss = int(id[1])
     mobile = ctx.author.is_on_mobile()
     print(mobile)
@@ -177,6 +188,7 @@ async def list_tls(
     if message:
         await ctx.respond(message)
         return
+    save_metric_from_context(ctx)
     mobile = ctx.author.is_on_mobile()
     timelines = Timelines.get_single_boss_timelines_from_db(boss)
 
@@ -297,6 +309,7 @@ async def animation_cancel(
     if message:
         await ctx.respond(message)
         return
+    save_metric_from_context(ctx)
     character_cleaned = clean_text(character)
     closest_matches = difflib.get_close_matches(character_cleaned, names_bank.keys(), n=1)
     if len(closest_matches) == 0 or closest_matches[0] not in animation_bank:
@@ -360,6 +373,7 @@ async def animation_cancel_unit_names(ctx,show: Option(bool, "Show this to every
     if message:
         await ctx.respond(message)
         return
+    save_metric_from_context(ctx)
     embed = discord.Embed(
         title="Unit names with animation cancel",
         description="These names and nicknames can be used with the /animation_cancel command." + \
@@ -409,6 +423,7 @@ async def evaluate_homework(ctx,
     if message:
         await ctx.respond(message)
         return
+    save_metric_from_context(ctx)
     await ctx.defer()
     embed = discord.Embed(
         title="Users with bad homework",
@@ -492,6 +507,7 @@ async def update_vocab_bank(ctx):
     if message:
         await ctx.respond(message)
         return
+    save_metric_from_context(ctx)
     global translation_mapping
     global animation_bank
     await ctx.defer()
@@ -508,6 +524,7 @@ async def load_tls(ctx, boss):
     if message:
         await ctx.respond(message)
         return
+    save_metric_from_context(ctx)
     start_time = time.time()
     acceptable_bosses = ['1', '2', '3', '4', '5', 'all']
     if boss not in acceptable_bosses:
@@ -526,6 +543,22 @@ async def load_tls(ctx, boss):
     await ctx.respond(f"Loaded TLs for boss: {boss}", ephemeral=True)
 
 
+def convert_to_roster_user(user):
+    if user.lower() in worry_users:
+        return worry_users[user.lower()].roster_name
+    if user.lower() in chorry_users:
+        return chorry_users[user.lower()].roster_name
+    return user
+
+
+def convert_to_hw_user(user):
+    if user.lower() in worry_users:
+        return worry_users[user.lower()].homework_name
+    if user.lower() in chorry_users:
+        return chorry_users[user.lower()].homework_name
+    return user
+
+
 # =============== Recommend allocation command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Recommends a three team allocation")
 async def recommend_allocation(ctx, user,
@@ -535,12 +568,14 @@ async def recommend_allocation(ctx, user,
         show: Option(bool, "Show this recommendation to everyone", required=False, default=False)
         ):
     message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    save_metric_from_context(ctx)
     embed = discord.Embed(
         title=f"Allocation recommendations for {user.capitalize()}",
         description="Eating pudding while doing homework leads to better results.",
         color=0xfffeff
     )
     start = time.time()
+    user = convert_to_roster_user(user)
     homework = get_roster(user)
     time_for_roster_sheet = time.time()
     print(time_for_roster_sheet - start)
@@ -612,11 +647,6 @@ def get_score(hw):
         total_score += convert_ev_to_float(actual_comp.ev) * score_multipliers[hw.comp3.boss]
     return total_score
 
-def convert_to_roster_user(user):
-    if user in roster_users:
-        return roster_users[user]
-    return user
-
 # =============== Change allocation command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Recommends a three team allocation")
 async def change_allocation(ctx,
@@ -630,6 +660,7 @@ async def change_allocation(ctx,
     if message:
         await ctx.respond(message)
         return
+    save_metric_from_context(ctx)
     #await ctx.defer()
 
     timeline = Timelines.get_from_db(target_tl[1], target_tl)
@@ -746,11 +777,15 @@ async def load_roster(ctx, user,
     if message:
         await ctx.respond(message)
         return
+    save_metric_from_context(ctx)
 
     role_ids = [role.id for role in ctx.author.roles]
-    if user == 'all' and not is_allowed_role(role_ids):
-        await ctx.respond("You must be an admin to be able to load roster boxes for all users!")
-
+    if is_allowed_role(role_ids):
+        await ctx.respond("You must be an admin to be able to run this command!")
+    if user == 'reset' and ctx.author.id == 152242204826533889:
+        load_roster_from_sheets('reset', chorry)
+        await ctx.respond(f"Reset Roster, chorry: {chorry}", ephemeral=True)
+        return
     start_time = time.time()
     await ctx.defer()
     load_roster_from_sheets(user, chorry)
@@ -759,9 +794,36 @@ async def load_roster(ctx, user,
     await ctx.respond(f"Loaded Rosters for {user}", ephemeral=True)
 
 
-# =============== Load TLs command =============
+@bot.slash_command(guild_ids=[1002644143589302352], description="Resets disband dict")
+async def reset_disband(ctx):
+    disband_dict = SqliteDict(Timelines.sqlitedict_base_path + 'disband.sqlite', autocommit=True)
+    disband_dict['count'] = 0
+    disband_dict['disband_messages'] = []
+    disband_dict['last_checked_time'] = {}
+    await ctx.respond("Reset the disband dictionary")
+
+
+@bot.slash_command(guild_ids=[1002644143589302352], description="Uploads metrics to gsheets")
+async def save_metrics(ctx):
+    unload_metrics()
+    await ctx.respond("Unloaded metrics to https://docs.google.com/spreadsheets/d/1G0oY2lQIAAVxDuFBQQSKYsREzqb31Q_t7CENUzdxyAQ")
+
+
+@bot.slash_command(guild_ids=[1002644143589302352], description="Uploads metrics to gsheets")
+async def add_banned_tl(ctx, id):
+    if id == 'reset':
+        Homework.reset_banned_tls()
+        await ctx.respond(f"Reset banned tls")
+        return
+    else:
+        Homework.add_banned_tl(id)
+    await ctx.respond(f"Added banned TL: {id}")
+
+
+# =============== Disband command =============
 @bot.slash_command(guild_ids=[1002644143589302352, 1025780100291112960], description="Disband...")
 async def disband(ctx):
+    save_metric_from_context(ctx)
     await ctx.defer()
     await scrape_disband_messages()
     disband_dict = SqliteDict(Timelines.sqlitedict_base_path + 'disband.sqlite', autocommit=True)
@@ -792,8 +854,11 @@ async def disband(ctx):
         color_code = 0xed5555
         disband_ending_message = "It's over. This is the worst thing to happen to Priconne since EN EOS. <:SadWorryDab:1083579383563952158>"
 
+    title_text = f"<:Puddisgust:1026691405797675100> Woody tried disbanding the clan _{counter}_ times this CB. <:Puddisgust:1026691405797675100>"
+    if counter == 1:
+        title_text = f"<:Puddisgust:1026691405797675100> Woody tried disbanding the clan _{counter}_ time this CB. <:Puddisgust:1026691405797675100>"
     embed = discord.Embed(
-        title=f"<:Puddisgust:1026691405797675100> Woody has tried disbanding _{counter}_ times this CB. <:Puddisgust:1026691405797675100>",
+        title=title_text,
         description=f'Disband threats in moderation are healthy for the clan.',
         color=color_code
     )
@@ -804,7 +869,10 @@ async def disband(ctx):
         disband_thread_message_links = ''
         for disband_message in disband_messages:
             link_message_counter += 1
-            disband_thread_message_links += f'_"{disband_message[2]}"_\n\t - Channel: {disband_message[1]} \n Circa <t:{int(disband_message[0].timestamp())}:d>\n\n'
+            if len(disband_message) > 3:
+                disband_thread_message_links += f'_"{disband_message[2]}"_\n\t - {disband_message[3]} \n Circa <t:{int(disband_message[0].timestamp())}:d>\n\n'
+            else:
+                disband_thread_message_links += f'_"{disband_message[2]}"_\n\t - Channel: {disband_message[1]} \n Circa <t:{int(disband_message[0].timestamp())}:d>\n\n'
             if link_message_counter == 3:
                 break
 
@@ -821,6 +889,132 @@ async def disband(ctx):
     )
     await ctx.respond(embed=embed, ephemeral=True)
 
+
+# =============== FC command =============
+@bot.slash_command(guild_ids=wc_guild_ids.values(), description="Marks FC for user")
+async def fc(ctx,
+             user: Option(str, "Name of user to fc, leave blank to see status of everybody", default=None),
+             chorry: Option(bool, "Displays fc status for chorry instead of worry", choices=[True, False], required=False, default=False)):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
+    save_metric_from_context(ctx)
+    if user == 'reset' and ctx.author.id == 152242204826533889:
+        reset_fc_dicts()
+        await ctx.respond("Reset fc dictionaries")
+        return
+    if not user:
+        embed = discord.Embed(
+            title=f'FC Status for {"Worry" if not chorry else "Chorry"}',
+            description='',
+            color=0xfffeff
+        )
+        statuses = get_fc_status(chorry)
+        embed.add_field(
+            name='',
+            value=f'{statuses[0]}',
+            inline=True
+        )
+        embed.add_field(
+            name='',
+            value=f'{statuses[1]}',
+            inline=True
+        )
+        await ctx.respond(embed=embed, ephemeral=False)
+    else:
+        worry = False
+        if user.lower() in worry_users:
+            worry = True
+        elif user.lower() in chorry_users:
+            worry = False
+        else:
+            await ctx.respond("Could not find user!")
+            return
+        master_dict = worry_users if worry else chorry_users
+        actual_user = master_dict[user.lower()]
+        status = mark_fc(actual_user.priconne_id)
+        status_display = icon_bank['checkmark'] if status[0] else icon_bank['redx']
+        embed = discord.Embed(
+            title=f'Updated FC status',
+            description=f'',
+            color=0xfffeff
+        )
+        embed.add_field(
+            name=f'{actual_user.display_name}: {status_display}',
+            value='',
+            inline=True
+        )
+        await ctx.respond(embed=embed, ephemeral=False)
+
+
+# =============== ATC command =============
+@bot.slash_command(guild_ids=wc_guild_ids.values(), description="Command to initiate/end piloting")
+async def atc(ctx,
+             action: Option(str, "Piloting action", choices=['Start', 'End', 'Status', 'Crash', 'Reset'], required=True),
+             user: Option(str, "The target user you are piloting/ending pilot", required=False)):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
+    save_metric_from_context(ctx)
+    if action == 'Start':
+        result = atc_start(ctx.author.id, user)
+        if result == -1:
+            await ctx.respond("Could not find target user!")
+        elif result == -2:
+            await ctx.respond(f'{user} is currently being piloted already.')
+        else:
+            await ctx.respond(f'Flight departing: <@{ctx.author.id}> {icon_bank["departing"]}{icon_bank["departing"]}{icon_bank["departing"]} <@{result}>')
+    elif action == 'End':
+        result = atc_end(ctx.author.id, user)
+        if result == -1:
+            await ctx.respond("Could not find target user or target user is not being piloted!")
+        elif result == -2:
+            await ctx.respond(f'Cannot end. Please have the current pilot end this pilot.')
+        else:
+            await ctx.respond(f'Flight arriving: <@{ctx.author.id}> {icon_bank["arriving"]}{icon_bank["arriving"]}{icon_bank["arriving"]} <@{result}>')
+    elif action == 'Crash':
+        result = atc_end(ctx.author.id, user, crash=True)
+        if result == -1:
+            await ctx.respond("Could not find target user or target user is not being piloted!")
+        else:
+            await ctx.respond(f'Flight crashed: <@{icon_bank["boom"]}{icon_bank["arriving"]}{icon_bank["boom"]} <@{result}>')
+    elif action == 'Status':
+        atc_statuses = atc_status()
+        count = 0
+        pilot_strings = []
+        for id in atc_statuses:
+            member = await bot.fetch_user(id)
+            if not member:
+                name = 'Unknown'
+            else:
+                name = member.name
+            pilot_string = f'**Pilot: {name}**\n'
+            for flight in atc_statuses[id]:
+                pilot_string += f'{flight[0]} - {flight[1]}\n'
+                count += 1
+            pilot_strings.append(pilot_string)
+        embed = discord.Embed(
+            title=f'Currently in flight: {count}',
+            description=f'',
+            color=0xfffeff
+        )
+        for pilot_string in pilot_strings:
+            embed.add_field(
+                name="",
+                value=pilot_string,
+                inline=True
+            )
+
+        await ctx.respond(embed=embed)
+    elif action == 'Reset':
+        if ctx.author.id == 152242204826533889:
+            reset_atc_dict()
+            await ctx.respond("Reset atc statuses")
+        else:
+            await ctx.respond("You do not have permissions to reset all atc statuses")
+    return
 
 # =============== Help command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Get a description of all commands")
@@ -865,14 +1059,14 @@ async def help(ctx):
     )
 
     embed.add_field(
-        name="/load_tls - Makes the bot retrieve the latest udpates to TLs for a boss",
+        name="/load_tls - Makes the bot retrieve the latest updates to TLs for a boss",
         value="```boss: Boss that you want the TL from (1-5)```",
         inline=False)
 
-    embed.add_field(
+    '''embed.add_field(
         name="/update_vocab_bank - Refreshes woody-grade translations. (ADMIN ONLY)",
         value="",
-        inline=False)
+        inline=False)'''
 
     embed.add_field(
         name="/evaluate_homework - Shames people who haven't done homework.",
@@ -889,23 +1083,32 @@ async def help(ctx):
     embed.add_field(
         name="/change_allocation - Finds all users who can change to a target TL",
         value="```user: Your username, make sure this matches EXACTLY to the name on the roster sheet" +
-            "\ntarget_tl: TL that you want to convert to```" +
-            "\nchorry (Optional): Gets conversion for chorry instead of worry",
+            "\ntarget_tl: TL that you want to convert to" +
+            "\nchorry (Optional): Gets conversion for chorry instead of worry```",
         inline=False)
 
     embed.add_field(
+        name="/fc - Marks a user's fc usage for the day",
+        value="```user (Optional): Target user to mark fc. When empty, displays whole clan's status." +
+            "\nchorry (Optional): Only used when user is empty to display chorry's fc status.```",
+        inline=False)
+
+    embed.add_field(
+        name="/atc - Piloting commands",
+        value="```action: Piloting action (start, end, status, crash)" +
+            "\nchorry (Optional): Only used when action = status to display chorry's fc status.```",
+        inline=False)
+
+    '''embed.add_field(
         name="/load_roster - Loads a roster box from sheets",
         value="```user: Your username, make sure this matches EXACTLY to the name on the roster sheet" +
-            "\nchorry (Optional): loads for chorry instead of worry",
-        inline=False)
+            "\nchorry (Optional): loads for chorry instead of worry```",
+        inline=False)'''
 
     await ctx.respond(embed=embed, ephemeral=True)
 
 async def scrape_disband_messages():
     disband_dict = SqliteDict(Timelines.sqlitedict_base_path + 'disband.sqlite', autocommit=True)
-    cb_start_time = datetime.datetime(2024, 1, 25, 8, tzinfo=datetime.timezone.utc)
-    cb_end_time = datetime.datetime(2024, 1, 29, 8, tzinfo=datetime.timezone.utc)
-
     disband_messages_key = 'disband_messages'
     count_key = 'count'
     start_search_key = 'last_checked_time'
@@ -924,12 +1127,18 @@ async def scrape_disband_messages():
     #152242204826533889 - zalteo
     #1025780100291112960 - clan server
     #416540817168007189 - woody
+    server_id = 1025780100291112960
+    search_user_id = 416540817168007189
+    if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPTOP-RVEEJPKP':
+        server_id = 1002644143589302352
+        search_user_id = 152242204826533889
+
     start_search_times = disband_dict[start_search_key]
     counter = disband_dict[count_key]
     disband_messages = disband_dict[disband_messages_key]
     #print(f"current_counter: {counter}")
-    excluded_channels = [1025781269411397662,1025781292031299604]
-    for channel_id in channel_ids[1025780100291112960].values():
+    excluded_channels = [1025781269411397662, 1025781292031299604, 1025782443388719205, 1201988712901394543]
+    for channel_id in channel_ids[server_id].values():
         if channel_id in excluded_channels:
             continue
         #print(channel_id)
@@ -942,8 +1151,8 @@ async def scrape_disband_messages():
         async for message in channel.history(limit=search_limit, after=start_search_time, oldest_first=True):
             if message.created_at > cb_end_time:
                 break
-            if message.author.id == 416540817168007189 and 'disband' in message.content.lower():
-                disband_messages.append((message.created_at, message.channel.name, message.content))
+            if message.author.id == search_user_id and 'disband' in message.content.lower():
+                disband_messages.append((message.created_at, message.channel.name, message.content, message.jump_url))
                 counter += 1
             start_search_times[channel_id] = message.created_at
         if channel_id in start_search_times:

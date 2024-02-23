@@ -105,8 +105,23 @@ icon_bank = {
     'xyori': '<:XYori:1166116711955701790>',
     'xyukari': '<:XYkr:1166542269415952475>',
     'yukari': '<:Ykri:1188722714765185024>',
+    'waoi': '<:WAoi:1210378085015494696>',
+    'skyouka': '<:SKyo:1210378083866255380>',
+    'skasumi': '<:SKas:1210378081403932723>',
+    'skyaru': '<:SKya:1210378082666414200>',
+    'ahiyori': '<:AHiy:1210378074047250442>',
+    'pishinobu': '<:PShin:1210378078857986069>',
+    'htsumugi': '<:HTsu:1210378075221528609>',
+    'shiburin': '<:Sbrn:1210378080225468556>',
+    'maho': '<:Maho:1210378077461418004>',
+    'clima': '<:CLima:1210378912568447076>',
 
-    'greeno': '<:greeno:1168060002636935168>'
+    'greeno': '<:greeno:1168060002636935168>',
+    'checkmark': ':white_check_mark:',
+    'redx': ':x:',
+    'departing': ':airplane_departure:',
+    'arriving': ':airplane_arriving:',
+    'boom': ':boom:'
 }
 
 

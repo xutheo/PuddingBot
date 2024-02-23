@@ -1,8 +1,10 @@
 import pygsheets
 from clan_battle_info import (translation_sheet_id, sheet_id, test_sheet_id, dtier_sheet_ids,
                               dtier_simple_sheet_id, dtier_ots_id, homework_sheet_id,
-                              homework_sheet_gid, chorry_homework_sheet_id, roster_sheet_id, chorry_roster_sheet_id)
+                              homework_sheet_gid, chorry_homework_sheet_id, roster_sheet_id, chorry_roster_sheet_id,
+                              metrics_sheet_id, metrics_gid, metrics_test_gid)
 from icon_bank import clean_text
+import os
 
 # Auth things with gsheets
 path = 'service_account.json'
@@ -72,6 +74,12 @@ def get_ots_worksheet(boss):
     return timelines_data_store.worksheet(property='id', value=dtier_ots_id)
 
 
+def get_homework_worksheet_users(chorry=False):
+    sheets = gc.open_by_key(homework_sheet_id if not chorry else chorry_homework_sheet_id)
+    sheets_wksht = sheets.worksheet(property='title', value='Welcome & Member Config')
+    return sheets_wksht
+
+
 def get_homework_worksheet(chorry=False):
     # Get the sheet that stores TLs
     if chorry:
@@ -82,11 +90,15 @@ def get_homework_worksheet(chorry=False):
     return sheets.worksheet(property='id', value=homework_sheet_gid)
 
 
+def get_roster_worksheet_users(chorry=False):
+    sheets = gc.open_by_key(roster_sheet_id if not chorry else chorry_roster_sheet_id)
+    sheets_wksht = sheets.worksheet(property='title', value='Member Config')
+    return sheets_wksht
+
+
 def get_roster_worksheet(user):
     sheets_wksht = None
     not_special_users = user.lower() != 'sariel' and user.lower() != 'avatar' and user.lower() != 'ark'
-    if user.lower() == 'dbonks':
-        user = 'dBONKs'
     try:
         sheets = gc.open_by_key(roster_sheet_id if not_special_users else chorry_roster_sheet_id)
         sheets_wksht = sheets.worksheet(property='title', value=user)
@@ -110,3 +122,15 @@ def get_roster_worksheet_by_idx(idx, chorry=False):
         sheets = gc.open_by_key(chorry_roster_sheet_id)
         sheets_wksht = sheets.worksheet(property='index', value=idx)
     return sheets_wksht
+
+
+def get_metrics_worksheet():
+    if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPTOP-RVEEJPKP':
+        sheets = gc.open_by_key(metrics_sheet_id)
+        sheets_wksht = sheets.worksheet(property='id', value=metrics_test_gid)
+        return sheets_wksht
+
+    sheets = gc.open_by_key(metrics_sheet_id)
+    sheets_wksht = sheets.worksheet(property='id', value=metrics_gid)
+    return sheets_wksht
+

@@ -126,6 +126,7 @@ class Homework:
         conflicts.borrow_conflicts = [self.comp1.evaluate_borrow(), self.comp2.evaluate_borrow(), self.comp3.evaluate_borrow()]
         return conflicts
 
+
     '''
     Using the user's unit box, gives a recommendation on a 3 comp allocation with preference to a specific boss
     '''
@@ -137,6 +138,8 @@ class Homework:
             for id in timelines:
                 tl = timelines[id]
                 if tl.style == 'OT' or (no_manual and 'Manual' in tl.style):
+                    continue
+                if id in get_banned_tls():
                     continue
                 unit_names = []
                 owned_units = 0
@@ -164,11 +167,11 @@ class Homework:
 
     def load_units_available(self, sheet):
         roster_start_tuple = (4, 2)
-        roster_end_tuple = (254, 5)
+        roster_end_tuple = (500, 5)
         roster_worksheet = sheet
 
         if not sheet:
-            roster_worksheet = sheets_helper.get_roster_worksheet(self.user if self.user[0].isupper() else self.user.capitalize())
+            roster_worksheet = sheets_helper.get_roster_worksheet(self.user)
             if not roster_worksheet:
                 self.roster_box = None
                 return
@@ -420,6 +423,8 @@ def convert_ev_to_float(ev):
             ev_as_num += c
         else:
             break
+    if ev_as_num == '':
+        return 0
     return float(ev_as_num)
 
 
@@ -451,10 +456,14 @@ def load_roster_from_sheets(user, chorry):
                 break
         for roster in rosters:
             print(roster)
+    elif user == 'reset':
+        rosters['worry' if not chorry else 'chorry'] = {}
+        return
     else:
         hw = Homework(user, None, None)
         rosters_dict[user.lower()] = hw
     rosters['worry' if not chorry else 'chorry'] = rosters_dict
+
 
 def get_roster(user):
     rosters = SqliteDict(sqlitedict_base_path + 'rosters.sqlite', autocommit=True)
@@ -489,6 +498,27 @@ def background_save_homework():
         print('Background saving homework sheet for chorry')
         save_homework(True)
         sleep(360)
+
+
+def get_banned_tls():
+    banned_tls = SqliteDict(sqlitedict_base_path + 'banned_tls.sqlite', autocommit=True)
+    print(banned_tls['banned'])
+    return banned_tls['banned']
+
+
+def add_banned_tl(id):
+    banned_tls = SqliteDict(sqlitedict_base_path + 'banned_tls.sqlite', autocommit=True)
+    if 'banned' not in banned_tls:
+        banned_tls['banned'] = []
+    banned_tls['banned'].append(id)
+    banned = banned_tls['banned']
+    banned.append(id)
+    banned_tls['banned'] = banned
+
+#add_banned_tl("D51")
+def reset_banned_tls():
+    banned_tls = SqliteDict(sqlitedict_base_path + 'banned_tls.sqlite', autocommit=True)
+    banned_tls['banned'] = []
 
 
 #save_homework(False)
