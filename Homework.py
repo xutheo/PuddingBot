@@ -502,7 +502,7 @@ def background_save_homework():
 
 def get_banned_tls():
     banned_tls = SqliteDict(sqlitedict_base_path + 'banned_tls.sqlite', autocommit=True)
-    print(banned_tls['banned'])
+    #print(banned_tls['banned'])
     return banned_tls['banned']
 
 

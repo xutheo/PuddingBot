@@ -780,8 +780,9 @@ async def load_roster(ctx, user,
     save_metric_from_context(ctx)
 
     role_ids = [role.id for role in ctx.author.roles]
-    if is_allowed_role(role_ids):
+    if not is_allowed_role(role_ids):
         await ctx.respond("You must be an admin to be able to run this command!")
+        return
     if user == 'reset' and ctx.author.id == 152242204826533889:
         load_roster_from_sheets('reset', chorry)
         await ctx.respond(f"Reset Roster, chorry: {chorry}", ephemeral=True)
@@ -843,11 +844,11 @@ async def disband(ctx):
     color_code = 0x2E8B57
     disband_ending_message = ''
     if counter == 0:
-        disband_ending_message = "We're safe! No disband this CB! <:ArisaSmile:1027258760122617937>"
-    elif 0 < counter <= 5:
+        disband_ending_message = "We're safe! No disband this CB! <:PuddingSmile:1135860601365733386>"
+    elif 0 < counter < 5:
         color_code = 0xffca4f
         disband_ending_message = "Ehhhhh, woody is probably joking. We're fine! <:BorryWeird:1063225784128508035>"
-    elif 5 < counter <= 10:
+    elif 5 <= counter < 10:
         color_code = 0xf28f0c
         disband_ending_message = "We might've bbed a few times, but we can't possibly disband...right? <a:WorryDodgeFast:1026512767185854486>"
     else:
@@ -856,7 +857,9 @@ async def disband(ctx):
 
     title_text = f"<:Puddisgust:1026691405797675100> Woody tried disbanding the clan _{counter}_ times this CB. <:Puddisgust:1026691405797675100>"
     if counter == 1:
-        title_text = f"<:Puddisgust:1026691405797675100> Woody tried disbanding the clan _{counter}_ time this CB. <:Puddisgust:1026691405797675100>"
+        title_text = f"<a:PuddingNom:1201481137806127178> Woody tried disbanding the clan _{counter}_ time this CB. <a:PuddingNom:1201481137806127178>"
+    elif 0 <= counter < 5:
+        title_text = f"<a:PuddingNom:1201481137806127178> Woody tried disbanding the clan _{counter}_ times this CB. <a:PuddingNom:1201481137806127178>"
     embed = discord.Embed(
         title=title_text,
         description=f'Disband threats in moderation are healthy for the clan.',
@@ -1174,7 +1177,7 @@ def background_save_disband_messages():
 
 
 #executor.submit(background_save_disband_messages)
-executor.submit(Timelines.background_load_tl)
+#executor.submit(Timelines.background_load_tl)
 executor.submit(background_save_homework)
 
 keep_alive()

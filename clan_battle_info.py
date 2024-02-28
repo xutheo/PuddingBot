@@ -1,6 +1,6 @@
 import datetime
-cb_start_time = datetime.datetime(2024, 2, 23, 8, tzinfo=datetime.timezone.utc)
-cb_end_time = datetime.datetime(2024, 2, 28, 20, tzinfo=datetime.timezone.utc)
+cb_start_time = datetime.datetime(2024, 2, 23, 20, tzinfo=datetime.timezone.utc)
+cb_end_time = datetime.datetime(2024, 2, 28, 8, tzinfo=datetime.timezone.utc)
 
 
 def find_current_day():

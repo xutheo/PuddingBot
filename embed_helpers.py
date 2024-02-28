@@ -418,7 +418,11 @@ def add_set_status_and_auto_state(embed, timeline):
     statuses = []
     unit_statuses = []
     for status in zipped_status:
-        unit_statuses.append(icon_bank[clean_text(status[0].name)])
+        cleaned_unit_name = clean_text(status[0].name)
+        if cleaned_unit_name in icon_bank:
+            unit_statuses.append(icon_bank[cleaned_unit_name])
+        else:
+            unit_statuses.append(status[0].name)
         statuses.append(f'{icon_bank["greeno"] if status[1] == "SET" else ":x:"}')
     embed.add_field(
         name='Initial Set Status',
