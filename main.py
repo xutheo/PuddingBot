@@ -74,7 +74,14 @@ channel_ids = {1002644143589302352:
                     "chorry-announcements": 1025781292031299604,
                     "discussion": 1131632662331805788,
                     "pudding-help": 1201988712901394543,
-                    "clan-announcements": 1025782443388719205
+                    "clan-announcements": 1025782443388719205,
+                    "borry-announcements": 1061314126346997820,
+                    "borry-clown-battle": 1061314327719727265,
+                    "borry-boss-1": 1063105615616024596,
+                    "borry-boss-2": 1063105646553206805,
+                    "borry-boss-3": 1063105674155937793,
+                    "borry-boss-4": 1063105699342716928,
+                    "borry-boss-5": 1063105727855611955,
                    },  # Worry/Chorry Channels
                805006358138585128:
                    {
@@ -968,7 +975,12 @@ async def atc(ctx,
         elif result == -2:
             await ctx.respond(f'{user} is currently being piloted already.')
         else:
-            await ctx.respond(f'Flight departing: <@{ctx.author.id}> {icon_bank["departing"]}{icon_bank["departing"]}{icon_bank["departing"]} <@{result}>')
+            if isinstance(result, int):
+                await ctx.respond(
+                    f'Flight departing: <@{ctx.author.id}> {icon_bank["departing"]}{icon_bank["departing"]}{icon_bank["departing"]} <@{result}>')
+            else:
+                await ctx.respond(
+                    f'Flight departing: <@{ctx.author.id}> {icon_bank["departing"]}{icon_bank["departing"]}{icon_bank["departing"]} {result}')
     elif action == 'End':
         result = atc_end(ctx.author.id, user)
         if result == -1:
@@ -976,13 +988,23 @@ async def atc(ctx,
         elif result == -2:
             await ctx.respond(f'Cannot end. Please have the current pilot end this pilot.')
         else:
-            await ctx.respond(f'Flight arriving: <@{ctx.author.id}> {icon_bank["arriving"]}{icon_bank["arriving"]}{icon_bank["arriving"]} <@{result}>')
+            if isinstance(result, int):
+                await ctx.respond(
+                    f'Flight arriving: <@{ctx.author.id}> {icon_bank["arriving"]}{icon_bank["arriving"]}{icon_bank["arriving"]} <@{result}>')
+            else:
+                await ctx.respond(
+                    f'Flight arriving: <@{ctx.author.id}> {icon_bank["arriving"]}{icon_bank["arriving"]}{icon_bank["arriving"]} {result}')
     elif action == 'Crash':
         result = atc_end(ctx.author.id, user, crash=True)
         if result == -1:
             await ctx.respond("Could not find target user or target user is not being piloted!")
         else:
-            await ctx.respond(f'Flight crashed: <@{icon_bank["boom"]}{icon_bank["arriving"]}{icon_bank["boom"]} <@{result}>')
+            if isinstance(result, int):
+                await ctx.respond(
+                    f'Flight crashed: <@{ctx.author.id}> {icon_bank["boom"]}{icon_bank["arriving"]}{icon_bank["boom"]} <@{result}>')
+            else:
+                await ctx.respond(
+                    f'Flight crashed: <@{ctx.author.id}> {icon_bank["boom"]}{icon_bank["arriving"]}{icon_bank["boom"]} {result}')
     elif action == 'Status':
         atc_statuses = atc_status()
         count = 0

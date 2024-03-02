@@ -86,6 +86,9 @@ chorry_base_users = {
 }
 
 
+extra_users = {}
+
+
 def get_roster_users(chorry=False):
     roster_users_sheet = get_roster_worksheet_users(chorry)
     roster_sheet_users = roster_users_sheet.get_values((2, 3), (31, 4))
@@ -122,6 +125,20 @@ def generate_master_user_dict(chorry=False):
             aliases.add(roster_users[id].lower())
         for alias in aliases:
             master_users_dict[alias] = user
+    for id in homework_users:
+        name = homework_users[id]
+        if name.lower() not in master_users_dict:
+            new_user = User(name, None, id)
+            master_users_dict[name.lower()] = User(name, None, id)
+            if id not in base_dict:
+                extra_users[id] = new_user
+    for id in roster_users:
+        name = roster_users[id]
+        if name.lower() not in master_users_dict:
+            new_user = User(name, None, id)
+            master_users_dict[name.lower()] = User(name, None, id)
+            if id not in base_dict:
+                extra_users[id] = new_user
     return master_users_dict
 
 
@@ -161,6 +178,8 @@ def find_user_by_id(id):
         return worry_base_users[id]
     if id in chorry_base_users:
         return chorry_base_users[id]
+    if id in extra_users:
+        return extra_users[id]
     return -1
 
 
@@ -217,7 +236,10 @@ def atc_start(discord_id, target_user):
     if user.priconne_id in atc_status:
         return -2
     atc_status[user.priconne_id] = (discord_id, datetime.datetime.now())
-    return user.discord_id
+    if user.discord_id:
+        return user.discord_id
+    else:
+        return user.display_name
 
 
 '''
@@ -241,7 +263,10 @@ def atc_end(discord_id, target_user, crash=False):
         if discord_id != pilot_discord_id:
             return -2
     del atc_status[priconne_id]
-    return user.discord_id
+    if user.discord_id:
+        return user.discord_id
+    else:
+        return user.display_name
 
 
 def atc_status():
