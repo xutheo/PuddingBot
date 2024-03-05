@@ -5,6 +5,8 @@ from sheets_helper import get_homework_worksheet
 from Timelines import get_single_boss_timelines_from_db, sqlitedict_base_path
 from icon_bank import clean_text, shorten_name
 from time import sleep
+from Users import worry_users, chorry_users
+import json
 from clan_battle_info import score_multipliers
 
 class Composition:
@@ -79,6 +81,12 @@ class Homework:
 
     def __init__(self, user, homework_grid=None, roster_box=None, sheet=None):
         self.user = user
+        self.roster_box = None
+        if user.lower() in worry_users:
+            self.id = worry_users[user.lower()].priconne_id
+        elif user.lower() in chorry_users:
+            self.id = chorry_users[user.lower()].priconne_id
+
         if homework_grid:
             comp1_units = []
             comp2_units = []
@@ -107,6 +115,12 @@ class Homework:
                 self.roster_box = roster_box
             else:
                 self.load_units_available(sheet)
+
+
+    def to_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__,
+            sort_keys=True, indent=4)
+
 
     '''
     Evaluates the homework provided by the user in the google sheet and checks if it a possible allocation
@@ -385,7 +399,10 @@ class Homework:
         return valid_allocs
 
     def __str__(self):
-        return f"User: {self.user}\nRoster Box: {self.roster_box}"
+        if self.roster_box:
+            return f"User: {self.user}\nRoster Box: {self.roster_box}"
+        else:
+            return f"User: {self.user}"
 
 def construct_homework_grid(i, j, values):
     COL_OFFSET = 12

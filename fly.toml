@@ -10,6 +10,7 @@ primary_region = "lax"
 
 [env]
   COMPUTERNAME = "FLY"
+  PORT = "8080"
 
 [[mounts]]
   source = "timeline_data"

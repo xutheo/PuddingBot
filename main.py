@@ -1,5 +1,5 @@
 import Homework
-from keep_alive import keep_alive
+#from keep_alive import keep_alive
 import discord
 from discord.ext import commands
 from tabulate import tabulate
@@ -1202,7 +1202,7 @@ def background_save_disband_messages():
 #executor.submit(Timelines.background_load_tl)
 executor.submit(background_save_homework)
 
-keep_alive()
+#keep_alive()
 token = json.load(open("service_account.json"))['discord_token']
 if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPTOP-RVEEJPKP':
     token = json.load(open("service_account.json"))['discord_token_test']
