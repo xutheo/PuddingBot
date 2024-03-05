@@ -1,4 +1,4 @@
-from flask import Flask, request, abort
+from flask import Flask, request, abort, Response
 import Timelines
 import json
 import Homework
@@ -18,19 +18,24 @@ app = Flask('PuddingBot')
 port = 8080
 host = "0.0.0.0"
 
-@app.route('/timelines', methods=['GET'])
+@app.route('/timeline', methods=['GET'])
 def get_timeline():
     id = request.args.get('id')
+    if not id:
+        return Response(response="(400) Bad Request: id is required for GET timeline", status=400)
     boss = int(id[1])
     timeline = Timelines.get_from_db(boss, id)
     if timeline:
         simple_timeline = SimpleTimeline(id, timeline.ev, timeline.units)
-    #print(simple_timeline.to_json())
-    return simple_timeline.to_json()
+        return simple_timeline.to_json()
+    return Response(response="(404) Not Found: Could not find timeline with specified id", status=404)
 
 @app.route('/homework', methods=['GET'])
 def get_homework():
-    id = request.args.get('id').lower()
+    id = request.args.get('id')
+    if not id:
+        return Response(response="(400) Bad Request: id is required for GET homework", status=400)
+
     worry_hw = Homework.get_homework(cache=True)
     chorry_hw = Homework.get_homework(chorry=True, cache=True)
 
@@ -42,7 +47,7 @@ def get_homework():
         if hw.id and id == str(hw.id):
             print(hw)
             return hw.to_json()
-    abort(404)
+    return Response(response="(404) Not Found: Could not find user with specified id", status=404)
 
 #homeworks = Homework.get_homework(cache=True)
 #for hw in homeworks:
