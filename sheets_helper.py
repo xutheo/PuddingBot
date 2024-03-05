@@ -1,7 +1,7 @@
 import pygsheets
-from clan_battle_info import (translation_sheet_id, sheet_id, test_sheet_id, dtier_sheet_ids,
-                              dtier_simple_sheet_id, dtier_ots_id, homework_sheet_id,
-                              homework_sheet_gid, chorry_homework_sheet_id, roster_sheet_id, chorry_roster_sheet_id,
+from clan_battle_info import (translation_sheet_id, get_sheet_id, test_sheet_id, dtier_sheet_ids,
+                              dtier_simple_sheet_id, dtier_ots_id, get_homework_sheet_id,
+                              homework_sheet_gid, roster_sheet_id, chorry_roster_sheet_id,
                               metrics_sheet_id, metrics_gid, metrics_test_gid)
 from icon_bank import clean_text
 import os
@@ -56,12 +56,14 @@ def get_animation_videos_names_bank():
 
 def get_timelines_worksheet(boss):
     # Get the sheet that stores TLs
+    sheet_id = get_sheet_id()
     timelines_data_store = gc.open_by_key(sheet_id)
     #timelines_data_store = gc.open_by_key(test_sheet_id)
     return timelines_data_store.worksheet(property='id', value=dtier_sheet_ids[boss])
 
 def get_simple_timelines_worksheet(boss):
     # Get the sheet that stores TLs
+    sheet_id = get_sheet_id()
     timelines_data_store = gc.open_by_key(sheet_id)
     #timelines_data_store = gc.open_by_key(test_sheet_id)
     return timelines_data_store.worksheet(property='id', value=dtier_simple_sheet_id)
@@ -69,22 +71,25 @@ def get_simple_timelines_worksheet(boss):
 
 def get_ots_worksheet(boss):
     # Get the sheet that stores TLs
+    sheet_id = get_sheet_id()
     timelines_data_store = gc.open_by_key(sheet_id)
     #timelines_data_store = gc.open_by_key(test_sheet_id)
     return timelines_data_store.worksheet(property='id', value=dtier_ots_id)
 
 
 def get_homework_worksheet_users(chorry=False):
-    sheets = gc.open_by_key(homework_sheet_id if not chorry else chorry_homework_sheet_id)
+    homework_sheet_id = get_homework_sheet_id(chorry)
+    sheets = gc.open_by_key(homework_sheet_id)
     sheets_wksht = sheets.worksheet(property='title', value='Welcome & Member Config')
     return sheets_wksht
 
 
 def get_homework_worksheet(chorry=False):
+    homework_sheet_id = get_homework_sheet_id(chorry)
     # Get the sheet that stores TLs
-    if chorry:
-        sheets = gc.open_by_key(chorry_homework_sheet_id)
-        return sheets.worksheet(property='id', value=homework_sheet_gid)
+    #if chorry:
+    #    sheets = gc.open_by_key(chorry_homework_sheet_id)
+    #    return sheets.worksheet(property='id', value=homework_sheet_gid)
 
     sheets = gc.open_by_key(homework_sheet_id)
     return sheets.worksheet(property='id', value=homework_sheet_gid)

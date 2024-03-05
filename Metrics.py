@@ -1,5 +1,5 @@
 from sqlitedict import SqliteDict
-from Timelines import sqlitedict_base_path
+from clan_battle_info import sqlitedict_base_path
 from sheets_helper import get_metrics_worksheet
 import datetime
 

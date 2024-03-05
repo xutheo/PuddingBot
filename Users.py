@@ -1,8 +1,7 @@
 from sheets_helper import get_homework_worksheet_users, get_roster_worksheet_users
 from sqlitedict import SqliteDict
-from Timelines import sqlitedict_base_path
 from icon_bank import icon_bank
-from clan_battle_info import cb_start_time, cb_end_time, find_current_day
+from clan_battle_info import find_current_day, sqlitedict_base_path
 import datetime
 
 class User:

@@ -2,7 +2,8 @@ import pygsheets.exceptions
 from sqlitedict import SqliteDict
 import sheets_helper
 from sheets_helper import get_homework_worksheet
-from Timelines import get_single_boss_timelines_from_db, sqlitedict_base_path
+from clan_battle_info import sqlitedict_base_path
+from Timelines import get_single_boss_timelines_from_db
 from icon_bank import clean_text, shorten_name
 from time import sleep
 from Users import worry_users, chorry_users

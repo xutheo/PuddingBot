@@ -1,6 +1,6 @@
 from sqlitedict import SqliteDict
 import sheets_helper
-from clan_battle_info import dtier_sheet_ids, boss_names, boss_image_urls, dtier_simple_sheet_id
+from clan_battle_info import dtier_sheet_ids, get_boss_names, get_boss_urls, dtier_simple_sheet_id, sqlitedict_base_path
 import os
 import threading
 import time
@@ -9,10 +9,6 @@ import numpy as np
 import pandas as pd
 
 load_to_db_lock = Lock()
-sqlitedict_base_path = f"/mnt/timeline_data/test_"
-if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPTOP-RVEEJPKP':
-    sqlitedict_base_path = f"./mnt/timeline_data/test_"
-
 
 class Timeline:
     UNIT_NAME_ROW = 2
@@ -108,9 +104,9 @@ class Timeline:
             self.unit_column = False
             self.simple = True
 
-        self.thumbnail_url = boss_image_urls[boss]
+        self.thumbnail_url = get_boss_urls()[boss-1]
         self.starting_cell_tuple = tl_cell_tuple
-        self.boss_name = boss_names[boss]
+        self.boss_name = get_boss_names()[boss-1]
 
     def __str__(self):
         return "Author: " + self.author + \

@@ -12,7 +12,8 @@ import os
 from discord.ui import Button, View
 from embed_helpers import get_display_embeds_compact, get_display_embeds, GetTLView, get_display_embeds2
 from functools import partial
-from clan_battle_info import boss_names, boss_image_urls, score_multipliers, cb_start_time, cb_end_time
+from clan_battle_info import get_boss_names, get_boss_urls, score_multipliers, get_time, sqlitedict_base_path
+import clan_battle_info
 import re
 from icon_bank import icon_bank, clean_text
 import difflib
@@ -201,8 +202,8 @@ async def list_tls(
 
     view = View()
     timeline_descriptions = ''
-    thumbnail_url = boss_image_urls[boss]
-    boss_name = boss_names[boss]
+    thumbnail_url = get_boss_urls()[boss-1]
+    boss_name = get_boss_names()[boss-1]
     simple_tl_descriptions = []
     complex_tl_descriptions = []
     ot_tl_descriptions = []
@@ -804,28 +805,11 @@ async def load_roster(ctx, user,
 
 @bot.slash_command(guild_ids=[1002644143589302352], description="Resets disband dict")
 async def reset_disband(ctx):
-    disband_dict = SqliteDict(Timelines.sqlitedict_base_path + 'disband.sqlite', autocommit=True)
+    disband_dict = SqliteDict(sqlitedict_base_path + 'disband.sqlite', autocommit=True)
     disband_dict['count'] = 0
     disband_dict['disband_messages'] = []
     disband_dict['last_checked_time'] = {}
     await ctx.respond("Reset the disband dictionary")
-
-
-@bot.slash_command(guild_ids=[1002644143589302352], description="Uploads metrics to gsheets")
-async def save_metrics(ctx):
-    unload_metrics()
-    await ctx.respond("Unloaded metrics to https://docs.google.com/spreadsheets/d/1G0oY2lQIAAVxDuFBQQSKYsREzqb31Q_t7CENUzdxyAQ")
-
-
-@bot.slash_command(guild_ids=[1002644143589302352], description="Uploads metrics to gsheets")
-async def add_banned_tl(ctx, id):
-    if id == 'reset':
-        Homework.reset_banned_tls()
-        await ctx.respond(f"Reset banned tls")
-        return
-    else:
-        Homework.add_banned_tl(id)
-    await ctx.respond(f"Added banned TL: {id}")
 
 
 # =============== Disband command =============
@@ -834,7 +818,7 @@ async def disband(ctx):
     save_metric_from_context(ctx)
     await ctx.defer()
     await scrape_disband_messages()
-    disband_dict = SqliteDict(Timelines.sqlitedict_base_path + 'disband.sqlite', autocommit=True)
+    disband_dict = SqliteDict(sqlitedict_base_path + 'disband.sqlite', autocommit=True)
     #disband_dict['count'] = 0
     #disband_dict['disband_messages'] = []
     #disband_dict['last_checked_time'] = {}
@@ -1133,7 +1117,7 @@ async def help(ctx):
     await ctx.respond(embed=embed, ephemeral=True)
 
 async def scrape_disband_messages():
-    disband_dict = SqliteDict(Timelines.sqlitedict_base_path + 'disband.sqlite', autocommit=True)
+    disband_dict = SqliteDict(sqlitedict_base_path + 'disband.sqlite', autocommit=True)
     disband_messages_key = 'disband_messages'
     count_key = 'count'
     start_search_key = 'last_checked_time'
@@ -1163,6 +1147,8 @@ async def scrape_disband_messages():
     disband_messages = disband_dict[disband_messages_key]
     #print(f"current_counter: {counter}")
     excluded_channels = [1025781269411397662, 1025781292031299604, 1025782443388719205, 1201988712901394543]
+    cb_start_time = get_time(True)
+    cb_end_time = get_time(False)
     for channel_id in channel_ids[server_id].values():
         if channel_id in excluded_channels:
             continue
@@ -1196,6 +1182,58 @@ def background_save_disband_messages():
         asyncio.run(scrape_disband_messages())
         print('Finished background scraping for disband messages')
         sleep(1357)
+
+
+'''------------------------------------------------------------------Personal server commands------------------------------------------------------------------'''
+@bot.slash_command(guild_ids=[1002644143589302352], description="Uploads metrics to gsheets")
+async def add_banned_tl(ctx, id):
+    if id == 'reset':
+        Homework.reset_banned_tls()
+        await ctx.respond(f"Reset banned tls")
+        return
+    else:
+        Homework.add_banned_tl(id)
+    await ctx.respond(f"Added banned TL: {id}")
+
+
+@bot.slash_command(guild_ids=[1002644143589302352], description="Uploads metrics to gsheets")
+async def save_metrics(ctx):
+    unload_metrics()
+    await ctx.respond("Unloaded metrics to https://docs.google.com/spreadsheets/d/1G0oY2lQIAAVxDuFBQQSKYsREzqb31Q_t7CENUzdxyAQ")
+
+
+@bot.slash_command(guild_ids=[1002644143589302352], description="Saves boss info")
+async def save_boss_info(ctx, boss,
+                         name: Option(str, required=False),
+                         url: Option(str, required=False)):
+    if name:
+        clan_battle_info.save_boss_name(boss, name)
+    if url:
+        clan_battle_info.save_boss_url(boss, url)
+    await ctx.respond(f"Saved boss info!")
+
+
+@bot.slash_command(guild_ids=[1002644143589302352], description="Saves boss thumbnail url")
+async def save_sheet_info(ctx,
+                          chorry: Option(bool, required=True),
+                          hw_sheet_id: Option(str, required=False),
+                          sheet_id: Option(str, required=False)):
+    if sheet_id:
+        clan_battle_info.save_sheet_id(sheet_id)
+    if hw_sheet_id:
+        clan_battle_info.save_homework_sheet_id(hw_sheet_id, chorry)
+    await ctx.respond(f"Saved sheet info!")
+
+
+@bot.slash_command(guild_ids=[1002644143589302352], description="Saves boss thumbnail url")
+async def save_time(ctx,
+                    start: Option(bool, required=True),
+                    year: Option(int, required=True),
+                    month: Option(int, required=True),
+                    day: Option(int, required=True),
+                    hour: Option(int, required=True)):
+    clan_battle_info.save_time(year, month, day, hour, start)
+    await ctx.respond(f"Saved cb time!")
 
 
 #executor.submit(background_save_disband_messages)
