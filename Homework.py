@@ -469,6 +469,7 @@ def load_roster_from_sheets(user, chorry):
                     hw = Homework(sht.title, None, None, sht)
                     print(hw)
                     rosters_dict[user] = hw
+                    rosters['worry' if not chorry else 'chorry'] = rosters_dict
                 roster_idx += 1
             except pygsheets.exceptions.WorksheetNotFound:
                 break
@@ -544,3 +545,4 @@ def reset_banned_tls():
 #print(get_roster('zalteo'))
 #hw = Homework('ErnLe', None, None)
 #print(hw.get_recommended_allocs(boss_preference=3))
+

@@ -56,6 +56,7 @@ channel_ids = {1002644143589302352:
                    },  # Zalteo Icon Bank Channels
                1025780100291112960:
                    {"d-tier-cooking": 1102872715473457224,
+                    "clan-battle-cooking": 1221363179464953856,
                     "bc-tier-cooking": 1102872644413571103,
                     "chefs-discussion": 1099083593222983700,
                     "jp-bot-spam": 1094596240274116608,

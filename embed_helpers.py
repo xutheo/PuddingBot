@@ -390,7 +390,11 @@ def convert_time_with_ot(ot, time):
         if ot > 90 or ot < 0:
             ot = 90
         offset = 90 - ot
+        split_char = '-'
         two_time_split = time.split('-')
+        if len(two_time_split) == 1:
+            two_time_split = time.split('/')
+            split_char = '/'
         if len(two_time_split) == 2:
             first_time_in_seconds = convert_time_to_seconds(two_time_split[0])
             second_time_in_seconds = convert_time_to_seconds(two_time_split[1])
@@ -400,7 +404,7 @@ def convert_time_with_ot(ot, time):
                 return "-1"
             first_time_string = convert_time_to_string(first_time_in_seconds - offset)
             second_time_string = convert_time_to_string(second_time_in_seconds - offset)
-            return f"{first_time_string}-{second_time_string}"
+            return f"{first_time_string}{split_char}{second_time_string}"
         else:
             time_in_seconds = convert_time_to_seconds(time)
             if not time_in_seconds:

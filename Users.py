@@ -97,18 +97,24 @@ def get_roster_users(chorry=False):
     return roster_users
 
 
-def get_homework_users(chorry=False):
+def get_homework_users_dict(chorry=False):
     homework_users_sheet = get_homework_worksheet_users(chorry)
-    homework_sheet_users = homework_users_sheet.get_values((3, 3), (32, 7))
+    homework_sheet_users = homework_users_sheet.get_values((3, 3), (32, 8))
     homework_users = {}
     #print(homework_sheet_users)
     for user in homework_sheet_users:
-        homework_users[int(user[4])] = user[0]
+        homework_users[int(user[5])] = user[1]
     return homework_users
 
+def get_homework_users(chorry=False):
+    homework_users_dict = get_homework_users_dict(chorry)
+    homework_users = {}
+    for id in homework_users_dict:
+        homework_users[id] = User(display_name=homework_users_dict[id], discord_id=None, priconne_id=id)
+    return homework_users
 
 def generate_master_user_dict(chorry=False):
-    homework_users = get_homework_users(chorry)
+    homework_users = get_homework_users_dict(chorry)
     roster_users = get_roster_users(chorry)
     base_dict = worry_base_users if not chorry else chorry_base_users
     master_users_dict = {}
@@ -184,10 +190,13 @@ def find_user_by_id(id):
 
 def reset_fc_dicts():
     fc_status = SqliteDict(sqlitedict_base_path + 'fc.sqlite', autocommit=True)
+    fc_status.clear()
     current_day = find_current_day()
-    for id in worry_base_users:
+    worry_hw_users = get_homework_users()
+    chorry_hw_users = get_homework_users(chorry=True)
+    for id in worry_hw_users:
         fc_status[id] = (True, current_day)
-    for id in chorry_base_users:
+    for id in chorry_hw_users:
         fc_status[id] = (True, current_day)
 
 
@@ -207,7 +216,7 @@ def get_fc_status(chorry=False):
     count = 0
     first_half_string = ''
     second_half_string = ''
-    base_dict = worry_base_users if not chorry else chorry_base_users
+    base_dict = get_homework_users() if not chorry else get_homework_users(chorry=True)
     for id in base_dict:
         current_day = find_current_day()
         if fc_status[id][1] != current_day:

@@ -149,3 +149,4 @@ boss_names = {
 
 cb_start_time = datetime.datetime(2024, 2, 23, 20, tzinfo=datetime.timezone.utc)
 cb_end_time = datetime.datetime(2024, 2, 28, 8, tzinfo=datetime.timezone.utc)'''
+#save_homework_sheet_id("1kN54HGKnRoMGYWFDTTFq4CqTTg_kcyVUyp2ZCMY5bUc", chorry=True)
