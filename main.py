@@ -23,7 +23,9 @@ from concurrent.futures import ThreadPoolExecutor
 import datetime
 from sqlitedict import SqliteDict
 from time import sleep
-from Users import worry_users, chorry_users, mark_fc, get_fc_status, reset_fc_dicts, atc_start, atc_end, atc_status, reset_atc_dict
+from Users import (worry_users, chorry_users, mark_fc, get_fc_status, reset_fc_dicts,
+                   atc_start, atc_end, atc_status, reset_atc_dict, find_user_by_discord_id,
+                   find_clan_by_discord_id, find_discord_id_by_priconne_id)
 from Metrics import save_metric_from_context, unload_metrics
 import asyncio
 
@@ -888,9 +890,9 @@ async def disband(ctx):
 # =============== FC command =============
 @bot.slash_command(guild_ids=wc_guild_ids.values(), description="Marks FC for user")
 async def fc(ctx,
-             user: Option(str, "Name of user to fc, leave blank to see status of everybody", default=None),
-             chorry: Option(bool, "Displays fc status for chorry instead of worry", choices=[True, False], required=False, default=False)):
+             user: Option(str, "Name of user to fc, or 'list' to see status", default=None)):
     message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    chorry = find_clan_by_discord_id(str(ctx.author.id))
     if message:
         await ctx.respond(message)
         return
@@ -899,7 +901,7 @@ async def fc(ctx,
         reset_fc_dicts()
         await ctx.respond("Reset fc dictionaries")
         return
-    if not user:
+    elif user == 'list':
         embed = discord.Embed(
             title=f'FC Status for {"Worry" if not chorry else "Chorry"}',
             description='',
@@ -914,6 +916,21 @@ async def fc(ctx,
         embed.add_field(
             name='',
             value=f'{statuses[1]}',
+            inline=True
+        )
+        await ctx.respond(embed=embed, ephemeral=False)
+    elif not user:
+        user = find_user_by_discord_id(ctx.author.id)
+        status = mark_fc(user.priconne_id)
+        status_display = icon_bank['checkmark'] if status[0] else icon_bank['redx']
+        embed = discord.Embed(
+            title=f'Updated FC status',
+            description=f'',
+            color=0xfffeff
+        )
+        embed.add_field(
+            name=f'{user.display_name}: {status_display}',
+            value='',
             inline=True
         )
         await ctx.respond(embed=embed, ephemeral=False)
@@ -1025,6 +1042,159 @@ async def atc(ctx,
         else:
             await ctx.respond("You do not have permissions to reset all atc statuses")
     return
+
+
+# =============== Assign roles command =============
+@bot.slash_command(guild_ids=wc_guild_ids.values(), description="Command to assign roles for bosses")
+async def assign_roles(ctx,
+                       chorry: Option(bool, "Assigns roles for chorry members", required=False, default=False)):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
+
+    role_ids = [role.id for role in ctx.author.roles]
+    if not is_allowed_role(role_ids):
+        await ctx.respond("You must be an admin to be able to run this command!")
+        return
+    await ctx.defer()
+    worry_boss_roles = {
+        1: ctx.guild.get_role(1242759370396274768),
+        2: ctx.guild.get_role(1242759476788858880),
+        3: ctx.guild.get_role(1242759504735506503),
+        4: ctx.guild.get_role(1242759524595666955),
+        5: ctx.guild.get_role(1242759544560422942)
+    }
+
+    chorry_boss_roles = {
+        1: ctx.guild.get_role(1242787138416676874),
+        2: ctx.guild.get_role(1242787176421527562),
+        3: ctx.guild.get_role(1242787190908518462),
+        4: ctx.guild.get_role(1242787203864592445),
+        5: ctx.guild.get_role(1242787214728106056)
+    }
+
+    '''test_roles = {
+        1: ctx.guild.get_role(1242761532052602915),
+        2: ctx.guild.get_role(1242761554810638378),
+        3: ctx.guild.get_role(1242761567196418119),
+        4: ctx.guild.get_role(1242761577376120892),
+        5: ctx.guild.get_role(1242761591846469814)
+    }'''
+    if not chorry:
+        worry_homework = get_homework(False)
+        for hw in worry_homework:
+            user_discord_id = find_discord_id_by_priconne_id(hw.id)
+            if not user_discord_id:
+                continue
+            boss_roles = []
+            print(hw.comp1, hw.comp2, hw.comp3)
+            if hw.comp1.tl_code:
+                role = worry_boss_roles[int(hw.comp1.tl_code[1])]
+                boss_roles.append(role)
+            if hw.comp2.tl_code:
+                role = worry_boss_roles[int(hw.comp2.tl_code[1])]
+                boss_roles.append(role)
+            if hw.comp3.tl_code:
+                role = worry_boss_roles[int(hw.comp3.tl_code[1])]
+                boss_roles.append(role)
+            member = ctx.guild.get_member(int(user_discord_id))
+            if not member:
+                member = await ctx.guild.fetch_member(int(user_discord_id))
+            if member:
+                all_roles = list(worry_boss_roles.values())
+                # Clean up old roles first
+                await member.remove_roles(*all_roles)
+                await member.add_roles(*boss_roles)
+    else:
+        chorry_homework = get_homework(True)
+        for hw in chorry_homework:
+            user_discord_id = find_discord_id_by_priconne_id(hw.id)
+            if not user_discord_id:
+                continue
+            boss_roles = []
+            print(hw.comp1, hw.comp2, hw.comp3)
+            if hw.comp1.tl_code:
+                role = chorry_boss_roles[int(hw.comp1.tl_code[1])]
+                boss_roles.append(role)
+            if hw.comp2.tl_code:
+                role = chorry_boss_roles[int(hw.comp2.tl_code[1])]
+                boss_roles.append(role)
+            if hw.comp3.tl_code:
+                role = chorry_boss_roles[int(hw.comp3.tl_code[1])]
+                boss_roles.append(role)
+            member = ctx.guild.get_member(int(user_discord_id))
+            if not member:
+                member = await ctx.guild.fetch_member(int(user_discord_id))
+            # Clean member of old roles first
+            if member:
+                all_roles = list(chorry_boss_roles.values())
+                # Clean up old roles first
+                await member.remove_roles(*all_roles)
+                await member.add_roles(*boss_roles)
+    await ctx.respond(f"Assigned boss roles to all {'chorry' if chorry else 'worry'} members that are registered with roboninon")
+
+# =============== Assign roles command =============
+@bot.slash_command(guild_ids=wc_guild_ids.values(), description="Command to remove all boss roles from users")
+async def remove_roles(ctx,
+                       chorry: Option(bool, "Remove roles for chorry members", required=False, default=False)):
+    message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
+    if message:
+        await ctx.respond(message)
+        return
+    role_ids = [role.id for role in ctx.author.roles]
+    if not is_allowed_role(role_ids):
+        await ctx.respond("You must be an admin to be able to run this command!")
+        return
+    await ctx.defer()
+    worry_boss_roles = {
+        1: ctx.guild.get_role(1242759370396274768),
+        2: ctx.guild.get_role(1242759476788858880),
+        3: ctx.guild.get_role(1242759504735506503),
+        4: ctx.guild.get_role(1242759524595666955),
+        5: ctx.guild.get_role(1242759544560422942)
+    }
+
+    chorry_boss_roles = {
+        1: ctx.guild.get_role(1242787138416676874),
+        2: ctx.guild.get_role(1242787176421527562),
+        3: ctx.guild.get_role(1242787190908518462),
+        4: ctx.guild.get_role(1242787203864592445),
+        5: ctx.guild.get_role(1242787214728106056)
+    }
+
+    '''test_roles = {
+        1: ctx.guild.get_role(1242761532052602915),
+        2: ctx.guild.get_role(1242761554810638378),
+        3: ctx.guild.get_role(1242761567196418119),
+        4: ctx.guild.get_role(1242761577376120892),
+        5: ctx.guild.get_role(1242761591846469814)
+    }'''
+    if not chorry:
+        worry_homework = get_homework(False)
+        for hw in worry_homework:
+            user_discord_id = find_discord_id_by_priconne_id(hw.id)
+            if not user_discord_id:
+                continue
+            member = ctx.guild.get_member(int(user_discord_id))
+            if not member:
+                member = await ctx.guild.fetch_member(int(user_discord_id))
+            if member:
+                all_roles = list(worry_boss_roles.values())
+                await member.remove_roles(*all_roles)
+    else:
+        chorry_homework = get_homework(True)
+        for hw in chorry_homework:
+            user_discord_id = find_discord_id_by_priconne_id(hw.id)
+            if not user_discord_id:
+                continue
+            member = ctx.guild.get_member(int(user_discord_id))
+            if not member:
+                member = await ctx.guild.fetch_member(int(user_discord_id))
+            if member:
+                all_roles = list(chorry_boss_roles.values())
+                await member.remove_roles(*all_roles)
+    await ctx.respond(f"Removed boss roles for all {'chorry' if chorry else 'worry'} members that are registered with roboninon")
 
 # =============== Help command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Get a description of all commands")

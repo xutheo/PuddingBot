@@ -2,7 +2,9 @@ from sheets_helper import get_homework_worksheet_users, get_roster_worksheet_use
 from sqlitedict import SqliteDict
 from icon_bank import icon_bank
 from clan_battle_info import find_current_day, sqlitedict_base_path
+import json
 import datetime
+import requests
 
 class User:
     def __init__(self, display_name, discord_id, priconne_id):
@@ -87,6 +89,34 @@ chorry_base_users = {
 
 extra_users = {}
 
+worry_discord_ids = {}
+chorry_discord_ids = {}
+
+def get_discord_ids():
+    worry_url = 'https://roboninon.win/api/v1/priconne/clan/490028/members'
+    chorry_url = 'https://roboninon.win/api/v1/priconne/clan/490549/members'
+    with open("ninon_api_keys.json") as api_keys:
+        keys = json.load(api_keys)
+        worry_key = keys['worry_key']
+        chorry_key = keys['chorry_key']
+
+        worry_ninon_users = requests.get(worry_url, params={"key": worry_key})
+        chorry_ninon_users = requests.get(chorry_url, params={"key": chorry_key})
+
+        if worry_ninon_users.ok:
+            content = worry_ninon_users.json()
+            for c in content:
+                if c['discord_id']:
+                    worry_discord_ids[c['viewer_id']] = c['discord_id']
+
+        if chorry_ninon_users.ok:
+            content = chorry_ninon_users.json()
+            for c in content:
+                if c['discord_id']:
+                    chorry_discord_ids[c['viewer_id']] = c['discord_id']
+
+
+get_discord_ids()
 
 def get_roster_users(chorry=False):
     roster_users_sheet = get_roster_worksheet_users(chorry)
@@ -133,15 +163,27 @@ def generate_master_user_dict(chorry=False):
     for id in homework_users:
         name = homework_users[id]
         if name.lower() not in master_users_dict:
-            new_user = User(name, None, id)
-            master_users_dict[name.lower()] = User(name, None, id)
+            discord_id = None
+            if id in worry_discord_ids:
+                discord_id = worry_discord_ids[id]
+            elif id in chorry_discord_ids:
+                discord_id = chorry_discord_ids[id]
+            new_user = User(name, discord_id, id)
+            new_user.homework_name = name
+            master_users_dict[name.lower()] = new_user
             if id not in base_dict:
                 extra_users[id] = new_user
     for id in roster_users:
         name = roster_users[id]
         if name.lower() not in master_users_dict:
-            new_user = User(name, None, id)
-            master_users_dict[name.lower()] = User(name, None, id)
+            discord_id = None
+            if id in worry_discord_ids:
+                discord_id = worry_discord_ids[id]
+            elif id in chorry_discord_ids:
+                discord_id = chorry_discord_ids[id]
+            new_user = User(name, discord_id, id)
+            new_user.roster_name = name
+            master_users_dict[name.lower()] = new_user
             if id not in base_dict:
                 extra_users[id] = new_user
     return master_users_dict
@@ -152,6 +194,13 @@ worry_users = generate_master_user_dict()
 #    print(f'{user}: {worry_users[user]}')
 chorry_users = generate_master_user_dict(chorry=True)
 
+'''for user in worry_users:
+    print(user)
+    print(worry_users[user])
+
+for user in chorry_users:
+    print(user)
+    print(chorry_users[user])'''
 
 def get_clan_dict(user):
     if not user:
@@ -187,7 +236,44 @@ def find_user_by_id(id):
         return extra_users[id]
     return -1
 
+def find_user_by_discord_id(id):
+    if not id:
+        return None
+    for name in worry_users:
+        user = worry_users[name]
+        if user.discord_id == id:
+            return user
+    for name in chorry_users:
+        user = chorry_users[name]
+        if user.discord_id == id:
+            return user
+    return None
 
+def find_clan_by_discord_id(id):
+    if not id:
+        return False
+    for viewer_id in worry_discord_ids:
+        discord_id = worry_discord_ids[viewer_id]
+        if id == discord_id:
+            return False
+    for viewer_id in chorry_discord_ids:
+        discord_id = chorry_discord_ids[viewer_id]
+        if id == discord_id:
+            return True
+    return False
+
+
+def find_discord_id_by_priconne_id(id):
+    if not id:
+        return None
+    if id in worry_discord_ids:
+        return worry_discord_ids[id]
+    if id in chorry_discord_ids:
+        return chorry_discord_ids[id]
+    return None
+
+
+print(chorry_discord_ids)
 def reset_fc_dicts():
     fc_status = SqliteDict(sqlitedict_base_path + 'fc.sqlite', autocommit=True)
     fc_status.clear()
@@ -198,7 +284,6 @@ def reset_fc_dicts():
         fc_status[id] = (True, current_day)
     for id in chorry_hw_users:
         fc_status[id] = (True, current_day)
-
 
 def mark_fc(id):
     fc_status = SqliteDict(sqlitedict_base_path + 'fc.sqlite', autocommit=True)
