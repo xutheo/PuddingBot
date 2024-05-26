@@ -9,10 +9,10 @@ if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPT
 
 dtier_sheet_ids = {
     1: "1305029905",
-    2: "1699807028",
-    3: "1464210928",
-    4: "2047017564",
-    5: "311078222"
+    2: "566858713",
+    3: "1527991517",
+    4: "1337006680",
+    5: "866511612"
 }
 
 score_multipliers = {

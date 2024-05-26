@@ -415,7 +415,7 @@ def construct_homework_grid(i, j, values):
     #print(grid)
     return user, grid
 
-
+# Returns a list of Homework objects representing users
 def get_homework(chorry=False, cache=False):
     if not cache:
         hw_wksht = get_homework_worksheet(chorry)

@@ -51,7 +51,7 @@ worry_base_users = {
     903158276: User('Arxos', 182221373475782656, 903158276),
     477080470: User('Zalteo', 152242204826533889, 477080470),
 }
-
+# Manually add astordor, justin, richard
 
 chorry_base_users = {
     911255036: User('Ark', 766868393848340480, 911255036),
@@ -85,7 +85,7 @@ chorry_base_users = {
     963789593: User('Avatar', 218199797184724993, 963789593),
     131899805: User('Paris', 630909379113254922, 131899805),
 }
-
+# Manually add doremy, nxh, and sariel
 
 extra_users = {}
 

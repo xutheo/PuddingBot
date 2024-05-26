@@ -136,7 +136,11 @@ icon_bank = {
     'sheffy': '<:Sheffy:1232617526807236639>',
     'wyuni': '<:WYuni:1232617713398972448> ',
     'xsaren': '<:XSaren:1232617530049429556>',
-    
+    'anemone': '<:Anem:1243511027878854727>',
+    'spkyouka': '<:SPKyo:1243511031356198922>',
+    'spsuzume': '<:SPSuz:1243511032333209701>',
+    'wchloe': '<:WChloe:1243511034271109181>',
+    'ruka': '<:Ruka:1243511029745324032>',
     
     'greeno': '<:greeno:1168060002636935168>',
     'checkmark': ':white_check_mark:',

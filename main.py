@@ -886,6 +886,24 @@ async def disband(ctx):
     )
     await ctx.respond(embed=embed, ephemeral=True)
 
+def get_fc_list(chorry):
+    embed = discord.Embed(
+        title=f'FC Status for {"Worry" if not chorry else "Chorry"}',
+        description='',
+        color=0xfffeff
+    )
+    statuses = get_fc_status(chorry)
+    embed.add_field(
+        name='',
+        value=f'{statuses[0]}',
+        inline=True
+    )
+    embed.add_field(
+        name='',
+        value=f'{statuses[1]}',
+        inline=True
+    )
+    return embed
 
 # =============== FC command =============
 @bot.slash_command(guild_ids=wc_guild_ids.values(), description="Marks FC for user")
@@ -902,22 +920,13 @@ async def fc(ctx,
         await ctx.respond("Reset fc dictionaries")
         return
     elif user == 'list':
-        embed = discord.Embed(
-            title=f'FC Status for {"Worry" if not chorry else "Chorry"}',
-            description='',
-            color=0xfffeff
-        )
-        statuses = get_fc_status(chorry)
-        embed.add_field(
-            name='',
-            value=f'{statuses[0]}',
-            inline=True
-        )
-        embed.add_field(
-            name='',
-            value=f'{statuses[1]}',
-            inline=True
-        )
+        embed = get_fc_list(chorry)
+        await ctx.respond(embed=embed, ephemeral=False)
+    elif user == 'chorry':
+        embed = get_fc_list(True)
+        await ctx.respond(embed=embed, ephemeral=False)
+    elif user == 'worry':
+        embed = get_fc_list(False)
         await ctx.respond(embed=embed, ephemeral=False)
     elif not user:
         user = find_user_by_discord_id(ctx.author.id)
@@ -1047,15 +1056,16 @@ async def atc(ctx,
 # =============== Assign roles command =============
 @bot.slash_command(guild_ids=wc_guild_ids.values(), description="Command to assign roles for bosses")
 async def assign_roles(ctx,
-                       chorry: Option(bool, "Assigns roles for chorry members", required=False, default=False)):
+                       chorry: Option(bool, "Assigns roles for chorry members", required=False, default=False),
+                       user: Option(str, "Assigns roles for specified user", required=False, default=False)):
     message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
     if message:
         await ctx.respond(message)
         return
 
     role_ids = [role.id for role in ctx.author.roles]
-    if not is_allowed_role(role_ids):
-        await ctx.respond("You must be an admin to be able to run this command!")
+    if not user and not is_allowed_role(role_ids):
+        await ctx.respond("You must be an admin to be able to run this command for all users!")
         return
     await ctx.defer()
     worry_boss_roles = {
@@ -1084,6 +1094,8 @@ async def assign_roles(ctx,
     if not chorry:
         worry_homework = get_homework(False)
         for hw in worry_homework:
+            if user and hw.user and user.lower() != hw.user.lower():
+                continue
             user_discord_id = find_discord_id_by_priconne_id(hw.id)
             if not user_discord_id:
                 continue
@@ -1109,6 +1121,8 @@ async def assign_roles(ctx,
     else:
         chorry_homework = get_homework(True)
         for hw in chorry_homework:
+            if user and hw.user and user.lower() != hw.user.lower():
+                continue
             user_discord_id = find_discord_id_by_priconne_id(hw.id)
             if not user_discord_id:
                 continue
@@ -1132,7 +1146,10 @@ async def assign_roles(ctx,
                 # Clean up old roles first
                 await member.remove_roles(*all_roles)
                 await member.add_roles(*boss_roles)
-    await ctx.respond(f"Assigned boss roles to all {'chorry' if chorry else 'worry'} members that are registered with roboninon")
+    if not user:
+        await ctx.respond(f"Assigned boss roles to all {'chorry' if chorry else 'worry'} members that are registered with roboninon")
+    else:
+        await ctx.respond(f"Assigned boss roles to {user} if they were registered with roboninon")
 
 # =============== Assign roles command =============
 @bot.slash_command(guild_ids=wc_guild_ids.values(), description="Command to remove all boss roles from users")
