@@ -117,6 +117,10 @@ class Homework:
             else:
                 self.load_units_available(sheet)
 
+    def compare(self, homework):
+        if self.user == homework.user and self.comp1.boss == homework.comp1.boss and self.comp2.boss == homework.comp2.boss and self.comp3.boss == homework.comp3.boss:
+            return True
+        return False
 
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__,
@@ -502,22 +506,6 @@ def save_homework(chorry):
         homework['chorry'] = hw
     else:
         homework['worry'] = hw
-
-
-def background_save_homework():
-    first_run = True
-    while True:
-        if first_run:
-            # Extra delay to desync from other load thread
-            sleep(60)
-            first_run = False
-        print('Background saving homework sheet for worry')
-        save_homework(False)
-        sleep(360)
-        print('Background saving homework sheet for chorry')
-        save_homework(True)
-        sleep(360)
-
 
 def get_banned_tls():
     banned_tls = SqliteDict(sqlitedict_base_path + 'banned_tls.sqlite', autocommit=True)

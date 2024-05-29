@@ -17,7 +17,7 @@ import clan_battle_info
 import re
 from icon_bank import icon_bank, clean_text
 import difflib
-from Homework import get_homework, convert_ev_to_float, get_roster, load_roster_from_sheets, save_homework, background_save_homework
+from Homework import get_homework, convert_ev_to_float, get_roster, load_roster_from_sheets, save_homework
 import time
 from concurrent.futures import ThreadPoolExecutor
 import datetime
@@ -819,8 +819,8 @@ async def reset_disband(ctx):
 @bot.slash_command(guild_ids=[1002644143589302352, 1025780100291112960], description="Disband...")
 async def disband(ctx):
     save_metric_from_context(ctx)
-    await ctx.defer()
-    await scrape_disband_messages()
+    #await ctx.defer()
+    #await scrape_disband_messages()
     disband_dict = SqliteDict(sqlitedict_base_path + 'disband.sqlite', autocommit=True)
     #disband_dict['count'] = 0
     #disband_dict['disband_messages'] = []
@@ -884,7 +884,7 @@ async def disband(ctx):
         value='',
         inline=False
     )
-    await ctx.respond(embed=embed, ephemeral=True)
+    await ctx.respond(embed=embed, ephemeral=False)
 
 def get_fc_list(chorry):
     embed = discord.Embed(
@@ -1052,6 +1052,72 @@ async def atc(ctx,
             await ctx.respond("You do not have permissions to reset all atc statuses")
     return
 
+async def add_roles(chorry, users):
+    if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPTOP-RVEEJPKP':
+        guild = bot.get_guild(1002644143589302352)
+        test_roles = {
+            1: guild.get_role(1242761532052602915),
+            2: guild.get_role(1242761554810638378),
+            3: guild.get_role(1242761567196418119),
+            4: guild.get_role(1242761577376120892),
+            5: guild.get_role(1242761591846469814)
+        }
+        boss_roles = test_roles
+    else:
+        guild = bot.get_guild(1025780100291112960)
+        worry_boss_roles = {
+            1: guild.get_role(1242759370396274768),
+            2: guild.get_role(1242759476788858880),
+            3: guild.get_role(1242759504735506503),
+            4: guild.get_role(1242759524595666955),
+            5: guild.get_role(1242759544560422942)
+        }
+
+        chorry_boss_roles = {
+            1: guild.get_role(1242787138416676874),
+            2: guild.get_role(1242787176421527562),
+            3: guild.get_role(1242787190908518462),
+            4: guild.get_role(1242787203864592445),
+            5: guild.get_role(1242787214728106056)
+        }
+        boss_roles = chorry_boss_roles if chorry else worry_boss_roles
+
+    if users is not None and len(users) == 0:
+        return
+    users_lower = None
+    if users:
+        users_lower = [user.lower() for user in users]
+    homework = get_homework(chorry, cache=True)
+    for hw in homework:
+        if users_lower and hw and hw.user and hw.user.lower() not in users_lower:
+            continue
+        user_discord_id = find_discord_id_by_priconne_id(hw.id)
+        if not user_discord_id:
+            continue
+        boss_roles_to_add = []
+        #print(hw.comp1, hw.comp2, hw.comp3)
+        print(f"Assigning boss roles for {hw.user}")
+        if hw.comp1.tl_code:
+            role = boss_roles[int(hw.comp1.tl_code[1])]
+            boss_roles_to_add.append(role)
+        if hw.comp2.tl_code:
+            role = boss_roles[int(hw.comp2.tl_code[1])]
+            boss_roles_to_add.append(role)
+        if hw.comp3.tl_code:
+            role = boss_roles[int(hw.comp3.tl_code[1])]
+            boss_roles_to_add.append(role)
+        member = guild.get_member(int(user_discord_id))
+        if not member:
+            try:
+                member = await guild.fetch_member(int(user_discord_id))
+            except Exception as e:
+                print(e)
+        if member:
+            all_roles = list(boss_roles.values())
+            # Clean up old roles first
+            await member.remove_roles(*all_roles)
+            await member.add_roles(*boss_roles_to_add)
+
 
 # =============== Assign roles command =============
 @bot.slash_command(guild_ids=wc_guild_ids.values(), description="Command to assign roles for bosses")
@@ -1068,88 +1134,12 @@ async def assign_roles(ctx,
         await ctx.respond("You must be an admin to be able to run this command for all users!")
         return
     await ctx.defer()
-    worry_boss_roles = {
-        1: ctx.guild.get_role(1242759370396274768),
-        2: ctx.guild.get_role(1242759476788858880),
-        3: ctx.guild.get_role(1242759504735506503),
-        4: ctx.guild.get_role(1242759524595666955),
-        5: ctx.guild.get_role(1242759544560422942)
-    }
 
-    chorry_boss_roles = {
-        1: ctx.guild.get_role(1242787138416676874),
-        2: ctx.guild.get_role(1242787176421527562),
-        3: ctx.guild.get_role(1242787190908518462),
-        4: ctx.guild.get_role(1242787203864592445),
-        5: ctx.guild.get_role(1242787214728106056)
-    }
-
-    '''test_roles = {
-        1: ctx.guild.get_role(1242761532052602915),
-        2: ctx.guild.get_role(1242761554810638378),
-        3: ctx.guild.get_role(1242761567196418119),
-        4: ctx.guild.get_role(1242761577376120892),
-        5: ctx.guild.get_role(1242761591846469814)
-    }'''
-    if not chorry:
-        worry_homework = get_homework(False)
-        for hw in worry_homework:
-            if user and hw.user and user.lower() != hw.user.lower():
-                continue
-            user_discord_id = find_discord_id_by_priconne_id(hw.id)
-            if not user_discord_id:
-                continue
-            boss_roles = []
-            print(hw.comp1, hw.comp2, hw.comp3)
-            if hw.comp1.tl_code:
-                role = worry_boss_roles[int(hw.comp1.tl_code[1])]
-                boss_roles.append(role)
-            if hw.comp2.tl_code:
-                role = worry_boss_roles[int(hw.comp2.tl_code[1])]
-                boss_roles.append(role)
-            if hw.comp3.tl_code:
-                role = worry_boss_roles[int(hw.comp3.tl_code[1])]
-                boss_roles.append(role)
-            member = ctx.guild.get_member(int(user_discord_id))
-            if not member:
-                member = await ctx.guild.fetch_member(int(user_discord_id))
-            if member:
-                all_roles = list(worry_boss_roles.values())
-                # Clean up old roles first
-                await member.remove_roles(*all_roles)
-                await member.add_roles(*boss_roles)
-    else:
-        chorry_homework = get_homework(True)
-        for hw in chorry_homework:
-            if user and hw.user and user.lower() != hw.user.lower():
-                continue
-            user_discord_id = find_discord_id_by_priconne_id(hw.id)
-            if not user_discord_id:
-                continue
-            boss_roles = []
-            print(hw.comp1, hw.comp2, hw.comp3)
-            if hw.comp1.tl_code:
-                role = chorry_boss_roles[int(hw.comp1.tl_code[1])]
-                boss_roles.append(role)
-            if hw.comp2.tl_code:
-                role = chorry_boss_roles[int(hw.comp2.tl_code[1])]
-                boss_roles.append(role)
-            if hw.comp3.tl_code:
-                role = chorry_boss_roles[int(hw.comp3.tl_code[1])]
-                boss_roles.append(role)
-            member = ctx.guild.get_member(int(user_discord_id))
-            if not member:
-                member = await ctx.guild.fetch_member(int(user_discord_id))
-            # Clean member of old roles first
-            if member:
-                all_roles = list(chorry_boss_roles.values())
-                # Clean up old roles first
-                await member.remove_roles(*all_roles)
-                await member.add_roles(*boss_roles)
+    await add_roles(chorry, [user] if user else None)
     if not user:
-        await ctx.respond(f"Assigned boss roles to all {'chorry' if chorry else 'worry'} members that are registered with roboninon")
+        await ctx.respond(f"Assigned boss roles to all {'chorry' if chorry else 'worry'} members.")
     else:
-        await ctx.respond(f"Assigned boss roles to {user} if they were registered with roboninon")
+        await ctx.respond(f"Assigned boss roles to {user}.")
 
 # =============== Assign roles command =============
 @bot.slash_command(guild_ids=wc_guild_ids.values(), description="Command to remove all boss roles from users")
@@ -1364,12 +1354,13 @@ async def scrape_disband_messages():
     disband_dict[start_search_key] = start_search_times
 
 
-def background_save_disband_messages():
+async def background_save_disband_messages():
+    await bot.wait_until_ready()
     while True:
         print('Background scraping for disband messages')
-        asyncio.run(scrape_disband_messages())
+        await scrape_disband_messages()
         print('Finished background scraping for disband messages')
-        sleep(1357)
+        await asyncio.sleep(600)
 
 
 '''------------------------------------------------------------------Personal server commands------------------------------------------------------------------'''
@@ -1424,9 +1415,42 @@ async def save_time(ctx,
     await ctx.respond(f"Saved cb time!")
 
 
+async def background_save_homework_and_roles():
+    await bot.wait_until_ready()
+    first_run = True
+    while True:
+        print('Background saving homework sheet for worry')
+        cached_hw = get_homework(cache=True)
+        save_homework(False)
+        new_hw = get_homework(cache=True)
+        to_add_roles = []
+        for i in range(len(cached_hw)):
+            if cached_hw[i].compare(new_hw[i]):
+                continue
+            to_add_roles.append(cached_hw[i].user.lower())
+        print(to_add_roles)
+        await add_roles(False, to_add_roles)
+        await asyncio.sleep(360)
+
+        print('Background saving homework sheet for chorry')
+        cached_hw = get_homework(chorry=True, cache=True)
+        save_homework(True)
+        new_hw = get_homework(chorry=True,cache=True)
+        to_add_roles = []
+        for i in range(len(cached_hw)):
+            if cached_hw[i].compare(new_hw[i]):
+                continue
+            to_add_roles.append(cached_hw[i].user.lower())
+        print(to_add_roles)
+        await add_roles(True, to_add_roles)
+        await asyncio.sleep(360)
+
 #executor.submit(background_save_disband_messages)
 #executor.submit(Timelines.background_load_tl)
-executor.submit(background_save_homework)
+#executor.submit(background_save_homework_and_roles)
+loop = asyncio.get_event_loop()
+loop.create_task(background_save_homework_and_roles())
+loop.create_task(background_save_disband_messages())
 
 #keep_alive()
 token = json.load(open("service_account.json"))['discord_token']

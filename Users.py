@@ -109,11 +109,19 @@ def get_discord_ids():
                 if c['discord_id']:
                     worry_discord_ids[c['viewer_id']] = c['discord_id']
 
+        for id in worry_base_users:
+            if id not in worry_discord_ids:
+                worry_discord_ids[id] = worry_base_users[id].discord_id
+
         if chorry_ninon_users.ok:
             content = chorry_ninon_users.json()
             for c in content:
                 if c['discord_id']:
                     chorry_discord_ids[c['viewer_id']] = c['discord_id']
+
+        for id in chorry_base_users:
+            if id not in chorry_discord_ids:
+                chorry_discord_ids[id] = chorry_base_users[id].discord_id
 
 
 get_discord_ids()
