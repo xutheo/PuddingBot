@@ -107,7 +107,10 @@ def get_discord_ids():
             content = worry_ninon_users.json()
             for c in content:
                 if c['discord_id']:
-                    worry_discord_ids[c['viewer_id']] = c['discord_id']
+                    try:
+                        worry_discord_ids[c['viewer_id']] = int(c['discord_id'])
+                    except Exception as e:
+                        print(f"Could not save worry discord id because of {e}")
 
         for id in worry_base_users:
             if id not in worry_discord_ids:
@@ -117,7 +120,10 @@ def get_discord_ids():
             content = chorry_ninon_users.json()
             for c in content:
                 if c['discord_id']:
-                    chorry_discord_ids[c['viewer_id']] = c['discord_id']
+                    try:
+                        chorry_discord_ids[c['viewer_id']] = c['discord_id']
+                    except Exception as e:
+                        print(f"Could not save chorry discord id because of {e}")
 
         for id in chorry_base_users:
             if id not in chorry_discord_ids:

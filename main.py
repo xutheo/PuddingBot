@@ -86,6 +86,10 @@ channel_ids = {1002644143589302352:
                     "borry-boss-3": 1063105674155937793,
                     "borry-boss-4": 1063105699342716928,
                     "borry-boss-5": 1063105727855611955,
+                    "staff-chat": 1070337797736628224,
+                    "leads-chat": 1102862545884303400,
+                    "chorry-leads": 1146492866814824618,
+                    "borry-leads": 1212991847652266004,
                    },  # Worry/Chorry Channels
                805006358138585128:
                    {
@@ -1063,6 +1067,7 @@ async def add_roles(chorry, users):
             5: guild.get_role(1242761591846469814)
         }
         boss_roles = test_roles
+        other_boss_roles = {}
     else:
         guild = bot.get_guild(1025780100291112960)
         worry_boss_roles = {
@@ -1081,6 +1086,7 @@ async def add_roles(chorry, users):
             5: guild.get_role(1242787214728106056)
         }
         boss_roles = chorry_boss_roles if chorry else worry_boss_roles
+        other_boss_roles = worry_boss_roles if chorry else chorry_boss_roles
 
     if users is not None and len(users) == 0:
         return
@@ -1113,7 +1119,7 @@ async def add_roles(chorry, users):
             except Exception as e:
                 print(e)
         if member:
-            all_roles = list(boss_roles.values())
+            all_roles = list(boss_roles.values()) + list(other_boss_roles.values())
             # Clean up old roles first
             await member.remove_roles(*all_roles)
             await member.add_roles(*boss_roles_to_add)
@@ -1383,12 +1389,9 @@ async def save_metrics(ctx):
 
 @bot.slash_command(guild_ids=[1002644143589302352], description="Saves boss info")
 async def save_boss_info(ctx, boss,
-                         name: Option(str, required=False),
-                         url: Option(str, required=False)):
+                         name: Option(str, required=False)):
     if name:
         clan_battle_info.save_boss_name(boss, name)
-    if url:
-        clan_battle_info.save_boss_url(boss, url)
     await ctx.respond(f"Saved boss info!")
 
 
@@ -1430,7 +1433,7 @@ async def background_save_homework_and_roles():
             to_add_roles.append(cached_hw[i].user.lower())
         print(to_add_roles)
         await add_roles(False, to_add_roles)
-        await asyncio.sleep(360)
+        await asyncio.sleep(120)
 
         print('Background saving homework sheet for chorry')
         cached_hw = get_homework(chorry=True, cache=True)
@@ -1443,7 +1446,7 @@ async def background_save_homework_and_roles():
             to_add_roles.append(cached_hw[i].user.lower())
         print(to_add_roles)
         await add_roles(True, to_add_roles)
-        await asyncio.sleep(360)
+        await asyncio.sleep(120)
 
 #executor.submit(background_save_disband_messages)
 #executor.submit(Timelines.background_load_tl)

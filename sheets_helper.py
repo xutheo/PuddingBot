@@ -138,4 +138,3 @@ def get_metrics_worksheet():
     sheets = gc.open_by_key(metrics_sheet_id)
     sheets_wksht = sheets.worksheet(property='id', value=metrics_gid)
     return sheets_wksht
-

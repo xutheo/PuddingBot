@@ -9,10 +9,10 @@ if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPT
 
 dtier_sheet_ids = {
     1: "1305029905",
-    2: "566858713",
-    3: "1527991517",
-    4: "1337006680",
-    5: "866511612"
+    2: "1699807028",
+    3: "1464210928",
+    4: "2047017564",
+    5: "311078222"
 }
 
 score_multipliers = {
@@ -55,6 +55,19 @@ roster_users = {
 cb_info_dict = SqliteDict(sqlitedict_base_path + 'clanbattle.sqlite', autocommit=True)
 
 
+boss_image_urls = {
+    "Wyvern": "https://redive.estertion.win/icon/unit/302100.webp",
+    "Wild Gryphon": "https://redive.estertion.win/icon/unit/302000.webp",
+    "Dirtigator": "https://redive.estertion.win/icon/unit/309100.webp",
+    "Titanoturtle": "https://redive.estertion.win/icon/unit/304100.webp",
+    "Karkinos": "https://redive.estertion.win/icon/unit/302700.webp",
+    "Goblin Brave": "https://redive.estertion.win/icon/unit/305700.webp",
+    "Rai-Rai": "https://redive.estertion.win/icon/unit/304600.webp",
+    "Smoldersaurus": "https://redive.estertion.win/icon/unit/303600.webp",
+    "Flower Madonna": "https://redive.estertion.win/icon/unit/319200.webp",
+    "Orleon": "https://redive.estertion.win/icon/unit/302800.webp"
+}
+
 def save_sheet_id(id):
     cb_info_dict['sheet_id'] = id
 
@@ -91,17 +104,16 @@ def save_boss_name(boss, name):
     names[int(boss)-1] = name
     cb_info_dict['boss_names'] = names
 
+    if name in boss_image_urls:
+        boss_urls = get_boss_urls()
+        boss_urls[int(boss) - 1] = boss_image_urls[name]
+        cb_info_dict['boss_urls'] = boss_urls
+
 
 def get_boss_urls():
     if 'boss_urls' not in cb_info_dict:
         return {1: None, 2: None, 3: None, 4: None, 5: None}
     return cb_info_dict['boss_urls']
-
-
-def save_boss_url(boss, url):
-    urls = get_boss_urls()
-    urls[int(boss)-1] = url
-    cb_info_dict['boss_urls'] = urls
 
 
 def save_time(year, month, day, hour, start=True):
@@ -131,14 +143,7 @@ def find_current_day():
         start += datetime.timedelta(days=1)
     return day
 
-'''boss_image_urls = {
-    1: "https://redive.estertion.win/icon/unit/305700.webp",
-    2: "https://redive.estertion.win/icon/unit/302000.webp",
-    3: "https://redive.estertion.win/icon/unit/301000.webp",
-    4: "https://redive.estertion.win/icon/unit/301500.webp",
-    5: "https://redive.estertion.win/icon/unit/303000.webp"
-}
-
+'''
 boss_names = {
     1: "Goblin",
     2: "Gryphon",
@@ -147,6 +152,6 @@ boss_names = {
     5: "Torpedon"
 }
 
-cb_start_time = datetime.datetime(2024, 2, 23, 20, tzinfo=datetime.timezone.utc)
-cb_end_time = datetime.datetime(2024, 2, 28, 8, tzinfo=datetime.timezone.utc)'''
+cb_start_time = datetime.datetime(2024, 6, 24, 20, tzinfo=datetime.timezone.utc)
+cb_end_time = datetime.datetime(2024, 6, 29, 8, tzinfo=datetime.timezone.utc)'''
 #save_homework_sheet_id("1kN54HGKnRoMGYWFDTTFq4CqTTg_kcyVUyp2ZCMY5bUc", chorry=True)

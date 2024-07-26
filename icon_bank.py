@@ -141,7 +141,27 @@ icon_bank = {
     'spsuzume': '<:SPSuz:1243511032333209701>',
     'wchloe': '<:WChloe:1243511034271109181>',
     'ruka': '<:Ruka:1243511029745324032>',
-    
+    'stmisaki': '<:STMis:1254552148658880634>',
+    'ssuzuna': '<:SSuz:1254552146343366767>',
+    'illya': '<:Illya:1254552141134303322>',
+    'dpmaho': '<:DPMaho:1254552138584162314>',
+    'nio': '<:Nio:1254552143864528916>',
+    'tsaoi': '<:TSAoi:1254552151212949524>',
+
+    'smaho': '<:SMaho:1265822925143933121>',
+    'nefi=nera': '<:NefiNera:1265822751877234778>',
+    'shatsune': '<:SHats:1265822753760477327>',
+    'kururu': '<:Kruru:1265822750304505978>',
+    'skaori': '<:SKaori:1265822923546034287>',
+    'smisora': '<:SMis:1265822926649823294>',
+    'specorine': '<:SPeco:1265822928369614991>',
+    'sriri': '<:SRiri:1265822929938288650>',
+    'sruka': '<:SRuka:1265822931389386763>',
+    'okuuka': '<:OKuka:1265893645563854908>',
+    'nyrei': '<:NYRei:1265893644167155742>',
+    'xchika': '<:XChika:1265893643210850304>',
+    'snea': '<:SNea:1265893641549779074>',
+
     'greeno': '<:greeno:1168060002636935168>',
     'checkmark': ':white_check_mark:',
     'redx': ':x:',
@@ -152,8 +172,8 @@ icon_bank = {
 
 
 def clean_text(text):
-    return re.sub('\\W+', '', text).lower()
-
+    #return re.sub('\\W+', '', text).lower()
+    return text.lower()
 
 def shorten_name(unit):
     if unit in shortened_names:

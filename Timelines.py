@@ -29,6 +29,10 @@ class Timeline:
 
     def __init__(self, tl_data, boss, tl_cell_tuple, simple, ot=False):
         if not simple:
+            for i in range(len(tl_data)):
+                if tl_data[i][1] == 'Boss UB' and not tl_data[i][2] and tl_data[i][3] != '':
+                    tl_data[i][2] = tl_data[i][3]
+
             while tl_data[self.TL_COL_LABELS_ROW][0] != 'Time':
                 self.TL_COL_LABELS_ROW += 1
                 self.TL_START_ROW += 1
