@@ -1,7 +1,7 @@
 import pygsheets
 from clan_battle_info import (translation_sheet_id, get_sheet_id, test_sheet_id, dtier_sheet_ids,
                               dtier_simple_sheet_id, dtier_ots_id, get_homework_sheet_id,
-                              homework_sheet_gid, roster_sheet_id, chorry_roster_sheet_id,
+                              homework_sheet_gid, roster_sheet_id, chorry_roster_sheet_id, borry_roster_sheet_id,
                               metrics_sheet_id, metrics_gid, metrics_test_gid)
 from icon_bank import clean_text
 import os
@@ -77,15 +77,15 @@ def get_ots_worksheet(boss):
     return timelines_data_store.worksheet(property='id', value=dtier_ots_id)
 
 
-def get_homework_worksheet_users(chorry=False):
-    homework_sheet_id = get_homework_sheet_id(chorry)
+def get_homework_worksheet_users(clan='Worry'):
+    homework_sheet_id = get_homework_sheet_id(clan)
     sheets = gc.open_by_key(homework_sheet_id)
     sheets_wksht = sheets.worksheet(property='title', value='Welcome & Member Config')
     return sheets_wksht
 
 
-def get_homework_worksheet(chorry=False):
-    homework_sheet_id = get_homework_sheet_id(chorry)
+def get_homework_worksheet(clan='Worry'):
+    homework_sheet_id = get_homework_sheet_id(clan)
     # Get the sheet that stores TLs
     #if chorry:
     #    sheets = gc.open_by_key(chorry_homework_sheet_id)
@@ -95,8 +95,8 @@ def get_homework_worksheet(chorry=False):
     return sheets.worksheet(property='id', value=homework_sheet_gid)
 
 
-def get_roster_worksheet_users(chorry=False):
-    sheets = gc.open_by_key(roster_sheet_id if not chorry else chorry_roster_sheet_id)
+def get_roster_worksheet_users(clan='Worry'):
+    sheets = gc.open_by_key(roster_sheet_id if clan == 'Worry' else chorry_roster_sheet_id if clan == 'Chorry' else borry_roster_sheet_id)
     sheets_wksht = sheets.worksheet(property='title', value='Member Config')
     return sheets_wksht
 

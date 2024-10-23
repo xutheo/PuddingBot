@@ -37,6 +37,7 @@ homework_sheet_gid = '574547770'
 
 roster_sheet_id = '15GBJagkAmLY70IiXwxce5VKWeSOioDfVoxrU-MxpqBo'
 chorry_roster_sheet_id = '1upz1usqd3abQ07WSR0zXyJUVBsw6tQ9t08w8GFvv224'
+borry_roster_sheet_id = ''
 
 metrics_sheet_id = '1G0oY2lQIAAVxDuFBQQSKYsREzqb31Q_t7CENUzdxyAQ'
 metrics_gid = 0
@@ -65,7 +66,16 @@ boss_image_urls = {
     "Rai-Rai": "https://redive.estertion.win/icon/unit/304600.webp",
     "Smoldersaurus": "https://redive.estertion.win/icon/unit/303600.webp",
     "Flower Madonna": "https://redive.estertion.win/icon/unit/319200.webp",
-    "Orleon": "https://redive.estertion.win/icon/unit/302800.webp"
+    "Orleon": "https://redive.estertion.win/icon/unit/302800.webp",
+    "Toughgeist": "https://redive.estertion.win/icon/unit/320800.webp",
+    "Wraithlord": "https://redive.estertion.win/icon/unit/304800.webp",
+    "Spirit Horn": "https://redive.estertion.win/icon/unit/300800.webp",
+    "Medusa": "https://redive.estertion.win/icon/unit/301400.webp",
+    "Greater Golem": "https://redive.estertion.win/icon/unit/301200.webp",
+    "Land Sloth": "https://redive.estertion.win/icon/unit/309000.webp",
+    "Venom Salamandra": "https://redive.estertion.win/icon/unit/306600.webp",
+    "Dark Gargoyle": "https://redive.estertion.win/icon/unit/315600.webp",
+    "Glutton": "https://redive.estertion.win/icon/unit/301300.webp",
 }
 
 def save_sheet_id(id):
@@ -77,19 +87,21 @@ def get_sheet_id():
     return cb_info_dict[key]
 
 
-def save_homework_sheet_id(id, chorry=False):
-    if not chorry:
+def save_homework_sheet_id(id, clan='Worry'):
+    if clan == 'Worry':
         cb_info_dict['hw_sheet_id'] = id
-    else:
+    elif clan == 'Chorry':
         cb_info_dict['hw_chorry_sheet_id'] = id
+    elif clan == 'Borry':
+        cb_info_dict['hw_borry_sheet_id'] = id
 
 #save_homework_sheet_id('1UClOlALY5x7Jr3DMHoheSW3_Of1ToPRjfdA5VahWaQQ', chorry=False)
 #save_homework_sheet_id('1FiVC_y4LOES6wIGN8591HZrwiSxejmAgXRNLzML_0ak', chorry=True)
 
-def get_homework_sheet_id(chorry=False):
-    key = 'hw_sheet_id' if not chorry else 'hw_chorry_sheet_id'
+def get_homework_sheet_id(clan='Worry'):
+    key = 'hw_sheet_id' if clan == 'Worry' else 'hw_chorry_sheet_id' if clan == 'Chorry' else 'hw_borry_sheet_id'
     if key not in cb_info_dict:
-        return '1UClOlALY5x7Jr3DMHoheSW3_Of1ToPRjfdA5VahWaQQ' if not chorry else '1FiVC_y4LOES6wIGN8591HZrwiSxejmAgXRNLzML_0ak'
+        return '1UClOlALY5x7Jr3DMHoheSW3_Of1ToPRjfdA5VahWaQQ' if clan == 'Worry' else '1zBsH7fdeVf6mhCk7P3FJAm2EDbGuMn2aY7cw0xsEhyc'
     return cb_info_dict[key]
 
 

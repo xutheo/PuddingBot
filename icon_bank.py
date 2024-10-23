@@ -162,6 +162,16 @@ icon_bank = {
     'xchika': '<:XChika:1265893643210850304>',
     'snea': '<:SNea:1265893641549779074>',
 
+    'suzuna': '<:Suz:1287923497410232320>',
+    'eriko': '<:Eriko:1287923484022018048>',
+    'srem': '<:SRem:1287923495585710101>',
+    'sechidna': '<:SEchidna:1287923491923955795>',
+    'sameth': '<:SAmeth:1287923489864417331>',
+    'psheffy': '<:PShef:1287923488467714160> ',
+    'smakoto': '<:SMako:1287923493840621608>',
+    'cmonika': '<:CMon:1287923481870073886>',
+    'olabyrista': '<:OLaby:1287923486009983009>',
+
     'greeno': '<:greeno:1168060002636935168>',
     'checkmark': ':white_check_mark:',
     'redx': ':x:',

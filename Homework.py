@@ -6,7 +6,7 @@ from clan_battle_info import sqlitedict_base_path
 from Timelines import get_single_boss_timelines_from_db
 from icon_bank import clean_text, shorten_name
 from time import sleep
-from Users import worry_users, chorry_users
+from Users import worry_users, chorry_users, borry_users
 import json
 from clan_battle_info import score_multipliers
 
@@ -87,6 +87,8 @@ class Homework:
             self.id = worry_users[user.lower()].priconne_id
         elif user.lower() in chorry_users:
             self.id = chorry_users[user.lower()].priconne_id
+        elif user.lower() in borry_users:
+            self.id = borry_users[user.lower()].priconne_id
 
         if homework_grid:
             comp1_units = []
@@ -420,9 +422,9 @@ def construct_homework_grid(i, j, values):
     return user, grid
 
 # Returns a list of Homework objects representing users
-def get_homework(chorry=False, cache=False):
+def get_homework(clan='Worry', cache=False):
     if not cache:
-        hw_wksht = get_homework_worksheet(chorry)
+        hw_wksht = get_homework_worksheet(clan)
         values = hw_wksht.get_all_values()
 
         homework = []
@@ -435,7 +437,7 @@ def get_homework(chorry=False, cache=False):
         return homework
     else:
         homework = SqliteDict(sqlitedict_base_path + 'homework.sqlite', autocommit=True)
-        return homework['chorry' if chorry else 'worry']
+        return homework['chorry' if clan == 'Chorry' else 'worry' if clan == 'Worry' else 'borry']
 
 
 def convert_ev_to_float(ev):
@@ -499,13 +501,15 @@ def get_roster(user):
     return None
 
 
-def save_homework(chorry):
+def save_homework(clan='Worry'):
     homework = SqliteDict(sqlitedict_base_path + 'homework.sqlite', autocommit=True)
-    hw = get_homework(chorry)
-    if chorry:
+    hw = get_homework(clan)
+    if clan == 'Chorry':
         homework['chorry'] = hw
-    else:
+    elif clan == 'Worry':
         homework['worry'] = hw
+    else:
+        homework['borry'] = hw
 
 def get_banned_tls():
     banned_tls = SqliteDict(sqlitedict_base_path + 'banned_tls.sqlite', autocommit=True)

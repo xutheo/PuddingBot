@@ -23,7 +23,7 @@ from concurrent.futures import ThreadPoolExecutor
 import datetime
 from sqlitedict import SqliteDict
 from time import sleep
-from Users import (worry_users, chorry_users, mark_fc, get_fc_status, reset_fc_dicts,
+from Users import (worry_users, chorry_users, borry_users, mark_fc, get_fc_status, reset_fc_dicts,
                    atc_start, atc_end, atc_status, reset_atc_dict, find_user_by_discord_id,
                    find_clan_by_discord_id, find_discord_id_by_priconne_id)
 from Metrics import save_metric_from_context, unload_metrics
@@ -57,11 +57,29 @@ channel_ids = {1002644143589302352:
                     "test": 1166119511376793664
                    },  # Zalteo Icon Bank Channels
                1025780100291112960:
-                   {"d-tier-cooking": 1102872715473457224,
-                    "clan-battle-cooking": 1221363179464953856,
-                    "bc-tier-cooking": 1102872644413571103,
-                    "chefs-discussion": 1099083593222983700,
+                   {
+                    #CB cooking channels
+                    "editable-sheet-link": 1176707090677518396,
+                    "transcribe-requests": 1258770676555448400,
+                    "tl-testing-requests": 1258771428887625858,
+                    "blue4-comp-finding": 1260617489235181631,
+                    "d1-cooking": 1258771069884432456,
+                    "d2-cooking": 1258771088993816587,
+                    "d3-cooking": 1258771110368116746,
+                    "d4-cooking": 1258771128634048573,
+                    "d5-cooking": 1258771149265829898,
+                    "overtime-cooking": 1258770854859247687,
+                    "bc-tier-cooking": 1258770601292861491,
+
+                    #Dining hall channels
+                    "clan-battle-discussion": 1221363179464953856,
+                    "event-bs-abyss-cooking": 1212636868500520980,
+                    "dungeon-cooking": 1093831361804124190,
+                    "deep-quest-cooking": 1149686008259022889,
+                    "dq-support-begging": 1208177597838790677,
                     "jp-bot-spam": 1094596240274116608,
+
+                    #Clan channels
                     "worry-chef-battle": 1025781394078715934,
                     "worry-boss-1": 1028582387019423784,
                     "worry-boss-2": 1028582408154521680,
@@ -90,6 +108,15 @@ channel_ids = {1002644143589302352:
                     "leads-chat": 1102862545884303400,
                     "chorry-leads": 1146492866814824618,
                     "borry-leads": 1212991847652266004,
+
+                    # Kitchen channels
+                    "chefs-general": 1099083593222983700,
+                    "cooking-blue4-guides": 1229137315826237470,
+                    "kitchen-leadership": 1258800610808168608,
+                    "kitchen-chinese": 1287035090475548724,
+                    "deep-quest-simming": 1240668885729022082,
+                    "guest-chef-request": 1207545815489454100,
+
                    },  # Worry/Chorry Channels
                805006358138585128:
                    {
@@ -433,7 +460,7 @@ async def animation_cancel_unit_names(ctx,show: Option(bool, "Show this to every
 # =============== Homework Command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Evaluates homework for the clan")
 async def evaluate_homework(ctx,
-                            chorry: Option(bool, "Evaluate for Chorry instead of Worry", required=False, default=False)):
+                            clan: Option(str, "Clan", choices=['Worry', 'Chorry', 'Borry'], required=True)):
     message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
     if message:
         await ctx.respond(message)
@@ -445,8 +472,8 @@ async def evaluate_homework(ctx,
         description="Shame these slackers!",
         color=0xfffeff
     )
-    homework = get_homework(chorry, cache=False)
-    save_homework(chorry)
+    homework = get_homework(clan, cache=False)
+    save_homework(clan)
     display_string = ''
     any_conflicts = False
     fields = 0
@@ -563,6 +590,8 @@ def convert_to_roster_user(user):
         return worry_users[user.lower()].roster_name
     if user.lower() in chorry_users:
         return chorry_users[user.lower()].roster_name
+    if user.lower() in borry_users:
+        return borry_users[user.lower()].roster_name
     return user
 
 
@@ -571,9 +600,11 @@ def convert_to_hw_user(user):
         return worry_users[user.lower()].homework_name
     if user.lower() in chorry_users:
         return chorry_users[user.lower()].homework_name
+    if user.lower() in borry_users:
+        return borry_users[user.lower()].roster_name
     return user
 
-
+'''
 # =============== Recommend allocation command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Recommends a three team allocation")
 async def recommend_allocation(ctx, user,
@@ -606,8 +637,8 @@ async def recommend_allocation(ctx, user,
     for i in range(len(max_allocs)):
         alloc = max_allocs[i]
         boss_excluded = alloc[3]
-        '''if boss_focus and i == boss_focus:
-            continue'''
+        #if boss_focus and i == boss_focus:
+        #    continue
         if not alloc or not alloc[1]:
             embed.add_field(
                 name=f'Exclude Boss {i}',
@@ -647,7 +678,7 @@ async def recommend_allocation(ctx, user,
             inline=False
         )
     await ctx.respond(embed=embed, ephemeral=not show)
-
+'''
 
 def get_score(hw):
     total_score = 0
@@ -661,7 +692,7 @@ def get_score(hw):
         actual_comp = Timelines.get_from_db(hw.comp3.boss, hw.comp3.tl_code)
         total_score += convert_ev_to_float(actual_comp.ev) * score_multipliers[hw.comp3.boss]
     return total_score
-
+'''
 # =============== Change allocation command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Recommends a three team allocation")
 async def change_allocation(ctx,
@@ -774,8 +805,6 @@ async def change_allocation(ctx,
                     value=comp_description,
                     inline=False
                 )
-        '''if valid_alloc and len(valid_alloc) > 0:
-            all_possible_converters.append(valid_alloc)'''
 
     view = GetTLView(embeds)
     end = time.time()
@@ -784,7 +813,7 @@ async def change_allocation(ctx,
     #print(all_possible_converters)
 
 
-# =============== Load TLs command =============
+# =============== Load Roster command =============
 @bot.slash_command(guild_ids=guild_ids.values(), description="Load roster boxes for all members (EXPENSIVE operation PLEASE do NOT run more than once)")
 async def load_roster(ctx, user,
                       chorry: Option(bool, "Load for Chorry instead of Worry", required=False, default=False)):
@@ -808,7 +837,7 @@ async def load_roster(ctx, user,
     end_time = time.time()
     print(f'Total time to load: {end_time-start_time}')
     await ctx.respond(f"Loaded Rosters for {user}", ephemeral=True)
-
+'''
 
 @bot.slash_command(guild_ids=[1002644143589302352], description="Resets disband dict")
 async def reset_disband(ctx):
@@ -890,13 +919,14 @@ async def disband(ctx):
     )
     await ctx.respond(embed=embed, ephemeral=False)
 
-def get_fc_list(chorry):
+def get_fc_list(clan='Worry'):
+    clan_name = "Worry" if clan=='Worry' else "Chorry" if clan=='Chorry' else "Borry"
     embed = discord.Embed(
-        title=f'FC Status for {"Worry" if not chorry else "Chorry"}',
+        title=f'FC Status for {clan_name}',
         description='',
         color=0xfffeff
     )
-    statuses = get_fc_status(chorry)
+    statuses = get_fc_status(clan)
     embed.add_field(
         name='',
         value=f'{statuses[0]}',
@@ -914,7 +944,7 @@ def get_fc_list(chorry):
 async def fc(ctx,
              user: Option(str, "Name of user to fc, or 'list' to see status", default=None)):
     message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
-    chorry = find_clan_by_discord_id(str(ctx.author.id))
+    clan = find_clan_by_discord_id(str(ctx.author.id))
     if message:
         await ctx.respond(message)
         return
@@ -924,13 +954,16 @@ async def fc(ctx,
         await ctx.respond("Reset fc dictionaries")
         return
     elif user == 'list':
-        embed = get_fc_list(chorry)
+        embed = get_fc_list(clan)
         await ctx.respond(embed=embed, ephemeral=False)
     elif user == 'chorry':
-        embed = get_fc_list(True)
+        embed = get_fc_list('Chorry')
         await ctx.respond(embed=embed, ephemeral=False)
     elif user == 'worry':
-        embed = get_fc_list(False)
+        embed = get_fc_list('Worry')
+        await ctx.respond(embed=embed, ephemeral=False)
+    elif user == 'borry':
+        embed = get_fc_list('Borry')
         await ctx.respond(embed=embed, ephemeral=False)
     elif not user:
         user = find_user_by_discord_id(ctx.author.id)
@@ -948,15 +981,17 @@ async def fc(ctx,
         )
         await ctx.respond(embed=embed, ephemeral=False)
     else:
-        worry = False
+        clan = ''
         if user.lower() in worry_users:
-            worry = True
+            clan = 'Worry'
         elif user.lower() in chorry_users:
-            worry = False
+            clan = 'Chorry'
+        elif user.lower() in borry_users:
+            clan = 'Borry'
         else:
             await ctx.respond("Could not find user!")
             return
-        master_dict = worry_users if worry else chorry_users
+        master_dict = worry_users if clan == 'Worry' else chorry_users if clan == 'Chorry' else borry_users
         actual_user = master_dict[user.lower()]
         status = mark_fc(actual_user.priconne_id)
         status_display = icon_bank['checkmark'] if status[0] else icon_bank['redx']
@@ -1056,7 +1091,7 @@ async def atc(ctx,
             await ctx.respond("You do not have permissions to reset all atc statuses")
     return
 
-async def add_roles(chorry, users):
+async def add_roles(clan, users):
     if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPTOP-RVEEJPKP':
         guild = bot.get_guild(1002644143589302352)
         test_roles = {
@@ -1067,7 +1102,7 @@ async def add_roles(chorry, users):
             5: guild.get_role(1242761591846469814)
         }
         boss_roles = test_roles
-        other_boss_roles = {}
+        all_roles = list(test_roles.values())
     else:
         guild = bot.get_guild(1025780100291112960)
         worry_boss_roles = {
@@ -1085,15 +1120,23 @@ async def add_roles(chorry, users):
             4: guild.get_role(1242787203864592445),
             5: guild.get_role(1242787214728106056)
         }
-        boss_roles = chorry_boss_roles if chorry else worry_boss_roles
-        other_boss_roles = worry_boss_roles if chorry else chorry_boss_roles
+
+        borry_boss_roles = {
+            1: guild.get_role(1298731987778928692),
+            2: guild.get_role(1298732060772663389),
+            3: guild.get_role(1298732179592974398),
+            4: guild.get_role(1298732278272360620),
+            5: guild.get_role(1298732281699237888)
+        }
+        all_roles = list(worry_boss_roles.values()) + list(chorry_boss_roles.values()) + list(borry_boss_roles.values())
+        boss_roles = chorry_boss_roles if clan == 'Chorry' else worry_boss_roles if clan == 'Worry' else borry_boss_roles
 
     if users is not None and len(users) == 0:
         return
     users_lower = None
     if users:
         users_lower = [user.lower() for user in users]
-    homework = get_homework(chorry, cache=True)
+    homework = get_homework(clan, cache=True)
     for hw in homework:
         if users_lower and hw and hw.user and hw.user.lower() not in users_lower:
             continue
@@ -1119,7 +1162,6 @@ async def add_roles(chorry, users):
             except Exception as e:
                 print(e)
         if member:
-            all_roles = list(boss_roles.values()) + list(other_boss_roles.values())
             # Clean up old roles first
             await member.remove_roles(*all_roles)
             await member.add_roles(*boss_roles_to_add)
@@ -1128,7 +1170,7 @@ async def add_roles(chorry, users):
 # =============== Assign roles command =============
 @bot.slash_command(guild_ids=wc_guild_ids.values(), description="Command to assign roles for bosses")
 async def assign_roles(ctx,
-                       chorry: Option(bool, "Assigns roles for chorry members", required=False, default=False),
+                       clan: Option(str, "Clan", choices=['Worry', 'Chorry', 'Borry'], required=True),
                        user: Option(str, "Assigns roles for specified user", required=False, default=False)):
     message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
     if message:
@@ -1141,9 +1183,9 @@ async def assign_roles(ctx,
         return
     await ctx.defer()
 
-    await add_roles(chorry, [user] if user else None)
+    await add_roles(clan, [user] if user else None)
     if not user:
-        await ctx.respond(f"Assigned boss roles to all {'chorry' if chorry else 'worry'} members.")
+        await ctx.respond(f"Assigned boss roles to all {clan} members.")
     else:
         await ctx.respond(f"Assigned boss roles to {user}.")
 
@@ -1397,13 +1439,13 @@ async def save_boss_info(ctx, boss,
 
 @bot.slash_command(guild_ids=[1002644143589302352], description="Saves boss thumbnail url")
 async def save_sheet_info(ctx,
-                          chorry: Option(bool, required=True),
+                          clan: Option(str, "Clan", choices=['Worry', 'Chorry', 'Borry'], required=True),
                           hw_sheet_id: Option(str, required=False),
                           sheet_id: Option(str, required=False)):
     if sheet_id:
         clan_battle_info.save_sheet_id(sheet_id)
     if hw_sheet_id:
-        clan_battle_info.save_homework_sheet_id(hw_sheet_id, chorry)
+        clan_battle_info.save_homework_sheet_id(hw_sheet_id, clan)
     await ctx.respond(f"Saved sheet info!")
 
 
@@ -1423,30 +1465,44 @@ async def background_save_homework_and_roles():
     first_run = True
     while True:
         print('Background saving homework sheet for worry')
-        cached_hw = get_homework(cache=True)
-        save_homework(False)
-        new_hw = get_homework(cache=True)
+        cached_hw = get_homework(clan='Worry', cache=True)
+        save_homework('Worry')
+        new_hw = get_homework(clan='Worry', cache=True)
         to_add_roles = []
         for i in range(len(cached_hw)):
             if cached_hw[i].compare(new_hw[i]):
                 continue
             to_add_roles.append(cached_hw[i].user.lower())
         print(to_add_roles)
-        await add_roles(False, to_add_roles)
+        await add_roles('Worry', to_add_roles)
         await asyncio.sleep(120)
 
         print('Background saving homework sheet for chorry')
-        cached_hw = get_homework(chorry=True, cache=True)
-        save_homework(True)
-        new_hw = get_homework(chorry=True,cache=True)
+        cached_hw = get_homework(clan='Chorry', cache=True)
+        save_homework('Chorry')
+        new_hw = get_homework(clan='Chorry', cache=True)
         to_add_roles = []
         for i in range(len(cached_hw)):
             if cached_hw[i].compare(new_hw[i]):
                 continue
             to_add_roles.append(cached_hw[i].user.lower())
         print(to_add_roles)
-        await add_roles(True, to_add_roles)
+        await add_roles('Chorry', to_add_roles)
         await asyncio.sleep(120)
+
+        print('Background saving homework sheet for borry')
+        cached_hw = get_homework(clan='Borry', cache=True)
+        save_homework('Borry')
+        new_hw = get_homework(clan='Borry', cache=True)
+        to_add_roles = []
+        for i in range(len(cached_hw)):
+            if cached_hw[i].compare(new_hw[i]):
+                continue
+            to_add_roles.append(cached_hw[i].user.lower())
+        print(to_add_roles)
+        await add_roles('Borry', to_add_roles)
+        await asyncio.sleep(120)
+
 
 #executor.submit(background_save_disband_messages)
 #executor.submit(Timelines.background_load_tl)

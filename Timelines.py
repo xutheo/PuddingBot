@@ -69,6 +69,13 @@ class Timeline:
             cols_to_delete = []
             for i in range(labels_length-2, actions_length-2):
                 cols_to_delete.append(i)
+            try:
+                for i in range(len(self.tl_actions)):
+                    if not self.tl_actions[i][2]:
+                        self.tl_actions[i][2] = self.tl_actions[i][3]
+            except:
+                print("failed to edit tl for double box boss ub")
+
             self.tl_actions = np.delete(self.tl_actions, cols_to_delete, 1)
             #print(f"self tl actions: {self.tl_actions}")
             #for tl_action in self.tl_actions:
@@ -189,7 +196,7 @@ def load_to_db(boss, clear=False):
         tl_cell_tuple = (tl[0], tl[1] - 2)
         tl_end_cell_tuple = (tl[0] + 9, tl[1] + 6)
         #tl_data = simple_wk_sht.get_values(tl_cell_tuple, tl_end_cell_tuple)
-        tl_data2 = all_simple_tls[tl[0] - 1:tl[0] + 9, tl[1] - 3: tl[1] + 6]
+        tl_data2 = all_simple_tls[tl[0] - 1:tl[0] + 11, tl[1] - 3: tl[1] + 6]
         timelines[tl_data2[0][0]] = Timeline(tl_data2, boss, tl_cell_tuple, True)
     time5 = time.time()
     #print(f'Zip and store simple tls: {time5-time4}')
@@ -208,7 +215,7 @@ def load_to_db(boss, clear=False):
     for ot_tl in ot_tl_start:
         tl_cell_tuple = (ot_tl[0], ot_tl[1] - 2)
         tl_end_cell_tuple = (ot_tl[0] + 9, ot_tl[1] + 6)
-        tl_data2 = all_ot_tls[ot_tl[0] - 1:ot_tl[0] + 9, ot_tl[1] - 3: ot_tl[1] + 6]
+        tl_data2 = all_ot_tls[ot_tl[0] - 1:ot_tl[0] + 11, ot_tl[1] - 3: ot_tl[1] + 6]
         timelines[tl_data2[0][0]] = Timeline(tl_data2, boss, tl_cell_tuple, True, True)
 
 
