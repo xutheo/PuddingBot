@@ -121,9 +121,67 @@ channel_ids = {1002644143589302352:
                805006358138585128:
                    {
                        "priconne-bot-commands": 850658639354396693,
-                       "jp-cb-relaxing-room": 933032227376345148
+                       "jp-cb-relaxing-room": 933032227376345148,
+                       "pioneers-room": 1202729920883859486
                    }  # Startend Channels
                }  # Channel ids
+
+background_scrape_channel_ids = \
+    {
+        1002644143589302352:
+        {
+            "super-private": 1067620591038889995,
+            "super-private-2": 1141152593683415060
+        },
+        1025780100291112960:
+        {
+            "blue4-comp-finding": 1260617489235181631,
+            "d1-cooking": 1258771069884432456,
+            "d2-cooking": 1258771088993816587,
+            "d3-cooking": 1258771110368116746,
+            "d4-cooking": 1258771128634048573,
+            "d5-cooking": 1258771149265829898,
+            "overtime-cooking": 1258770854859247687,
+            "bc-tier-cooking": 1258770601292861491,
+
+            #Dining hall channels
+            "clan-battle-discussion": 1221363179464953856,
+
+            #Clan channels
+            "worry-chef-battle": 1025781394078715934,
+            "worry-boss-1": 1028582387019423784,
+            "worry-boss-2": 1028582408154521680,
+            "worry-boss-3": 1028582424252260372,
+            "worry-boss-4": 1028582442606547054,
+            "worry-boss-5": 1028582461984227511,
+            "worry-announcements": 1025781269411397662,
+            "chorry-clown-battle": 1025781436315336775,
+            "chorry-boss-1": 1056083088951738419,
+            "chorry-boss-2": 1056083142999552070,
+            "chorry-boss-3": 1056083194597867530,
+            "chorry-boss-4": 1056083259672498206,
+            "chorry-boss-5": 1056083315142164510,
+            "chorry-announcements": 1025781292031299604,
+            "discussion": 1131632662331805788,
+            "pudding-help": 1201988712901394543,
+            "clan-announcements": 1025782443388719205,
+            "borry-announcements": 1061314126346997820,
+            "borry-clown-battle": 1061314327719727265,
+            "borry-boss-1": 1063105615616024596,
+            "borry-boss-2": 1063105646553206805,
+            "borry-boss-3": 1063105674155937793,
+            "borry-boss-4": 1063105699342716928,
+            "borry-boss-5": 1063105727855611955,
+            "staff-chat": 1070337797736628224,
+            "leads-chat": 1102862545884303400,
+            "chorry-leads": 1146492866814824618,
+            "borry-leads": 1212991847652266004,
+
+            # Kitchen channels
+            "chefs-general": 1099083593222983700,
+        }
+
+    }
 non_display_channel_ids = {"bot-dev": 1141149506021367849}
 restricted_role_ids = [1200589687623004291, 1025781797696581754, 1025780684574433390]
 bot = commands.Bot(command_prefix=commands.when_mentioned_or("."))
@@ -1185,9 +1243,9 @@ async def assign_roles(ctx,
 
     await add_roles(clan, [user] if user else None)
     if not user:
-        await ctx.respond(f"Assigned boss roles to all {clan} members.")
+        await ctx.followup.send(f"Assigned boss roles to all {clan} members.")
     else:
-        await ctx.respond(f"Assigned boss roles to {user}.")
+        await ctx.followup.send(f"Assigned boss roles to {user}.")
 
 # =============== Assign roles command =============
 @bot.slash_command(guild_ids=wc_guild_ids.values(), description="Command to remove all boss roles from users")
@@ -1372,28 +1430,33 @@ async def scrape_disband_messages():
     counter = disband_dict[count_key]
     disband_messages = disband_dict[disband_messages_key]
     #print(f"current_counter: {counter}")
-    excluded_channels = [1025781269411397662, 1025781292031299604, 1025782443388719205, 1201988712901394543]
+
+    excluded_channels = [1025781269411397662, 1025781292031299604, 1025782443388719205, 1201988712901394543,
+                         1212991847652266004, 1146492866814824618, 1102862545884303400, 1070337797736628224]
     cb_start_time = get_time(True)
     cb_end_time = get_time(False)
-    for channel_id in channel_ids[server_id].values():
-        if channel_id in excluded_channels:
-            continue
-        #print(channel_id)
-        channel = bot.get_channel(channel_id)
-        start_search_time = cb_start_time
-        search_limit = 1000
-        if channel_id in start_search_times:
-            start_search_time = start_search_times[channel_id]
-            print(f"latest search time for channel {channel_id}: {start_search_times[channel_id]}")
-        async for message in channel.history(limit=search_limit, after=start_search_time, oldest_first=True):
-            if message.created_at > cb_end_time:
-                break
-            if message.author.id == search_user_id and 'disband' in message.content.lower():
-                disband_messages.append((message.created_at, message.channel.name, message.content, message.jump_url))
-                counter += 1
-            start_search_times[channel_id] = message.created_at
-        if channel_id in start_search_times:
-            print(f"latest search time for channel {channel_id}: {start_search_times[channel_id]}")
+    for channel_id in background_scrape_channel_ids[server_id].values():
+        try:
+            if channel_id in excluded_channels:
+                continue
+            #print(channel_id)
+            channel = bot.get_channel(channel_id)
+            start_search_time = cb_start_time
+            search_limit = 1000
+            if channel_id in start_search_times:
+                start_search_time = start_search_times[channel_id]
+                print(f"latest search time for channel {channel_id}: {start_search_times[channel_id]}")
+            async for message in channel.history(limit=search_limit, after=start_search_time, oldest_first=True):
+                if message.created_at > cb_end_time:
+                    break
+                if message.author.id == search_user_id and 'disband' in message.content.lower():
+                    disband_messages.append((message.created_at, message.channel.name, message.content, message.jump_url))
+                    counter += 1
+                start_search_times[channel_id] = message.created_at
+            if channel_id in start_search_times:
+                print(f"latest search time for channel {channel_id}: {start_search_times[channel_id]}")
+        except discord.errors.Forbidden:
+            print(f"Could not access channel with id {channel_id}")
 
     #print(f"after search current_counter: {counter}")
     disband_messages = list(sorted(disband_messages, key=lambda x: x[0]))
@@ -1448,6 +1511,11 @@ async def save_sheet_info(ctx,
         clan_battle_info.save_homework_sheet_id(hw_sheet_id, clan)
     await ctx.respond(f"Saved sheet info!")
 
+@bot.slash_command(guild_ids=[1002644143589302352], description="Saves Homework")
+async def save_hw(ctx,
+                  clan: Option(str, "Clan", choices=['Worry', 'Chorry', 'Borry'], required=True)):
+    save_homework(clan)
+    await ctx.respond(f"Saved homework")
 
 @bot.slash_command(guild_ids=[1002644143589302352], description="Saves boss thumbnail url")
 async def save_time(ctx,

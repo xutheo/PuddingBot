@@ -76,6 +76,17 @@ boss_image_urls = {
     "Venom Salamandra": "https://redive.estertion.win/icon/unit/306600.webp",
     "Dark Gargoyle": "https://redive.estertion.win/icon/unit/315600.webp",
     "Glutton": "https://redive.estertion.win/icon/unit/301300.webp",
+
+    "Madam Electra": "https://redive.estertion.win/icon/unit/312500.webp",
+    "Goblin Rider": "https://redive.estertion.win/icon/unit/316600.webp",
+    "Wild Talon": "https://redive.estertion.win/icon/unit/306400.webp",
+    "Ziz": "https://redive.estertion.win/icon/unit/301600.webp",
+    "Lesathapult": "https://redive.estertion.win/icon/unit/300200.webp",
+
+    "Mega Lapahn": "https://redive.estertion.win/icon/unit/305100.webp",
+    "Sagitarius": "https://redive.estertion.win/icon/unit/301800.webp",
+    "Flower Chevalier": "https://redive.estertion.win/icon/unit/311200.webp",
+    "Frost Hound": "https://redive.estertion.win/icon/unit/319600.webp",
 }
 
 def save_sheet_id(id):

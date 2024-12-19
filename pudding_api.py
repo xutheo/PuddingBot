@@ -36,14 +36,18 @@ def get_homework():
     if not id:
         return Response(response="(400) Bad Request: id is required for GET homework", status=400)
 
-    worry_hw = Homework.get_homework(cache=True)
-    chorry_hw = Homework.get_homework(chorry=True, cache=True)
-
+    worry_hw = Homework.get_homework(clan="Worry", cache=True)
+    chorry_hw = Homework.get_homework(clan="Chorry", cache=True)
+    borry_hw = Homework.get_homework(clan="Borry", cache=True)
     for hw in worry_hw:
         if hw.id and id == str(hw.id):
             print(hw)
             return hw.to_json()
     for hw in chorry_hw:
+        if hw.id and id == str(hw.id):
+            print(hw)
+            return hw.to_json()
+    for hw in borry_hw:
         if hw.id and id == str(hw.id):
             print(hw)
             return hw.to_json()

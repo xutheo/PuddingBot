@@ -89,6 +89,8 @@ class Homework:
             self.id = chorry_users[user.lower()].priconne_id
         elif user.lower() in borry_users:
             self.id = borry_users[user.lower()].priconne_id
+        else:
+            self.id = None
 
         if homework_grid:
             comp1_units = []
