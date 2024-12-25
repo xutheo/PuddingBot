@@ -87,6 +87,10 @@ boss_image_urls = {
     "Sagitarius": "https://redive.estertion.win/icon/unit/301800.webp",
     "Flower Chevalier": "https://redive.estertion.win/icon/unit/311200.webp",
     "Frost Hound": "https://redive.estertion.win/icon/unit/319600.webp",
+
+    "Algedi": "https://redive.estertion.win/icon/unit/300400.webp",
+    "Obsidian Wyvern": "https://redive.estertion.win/icon/unit/312000.webp",
+    "Mushussu": "https://redive.estertion.win/icon/unit/303500.webp"
 }
 
 def save_sheet_id(id):
