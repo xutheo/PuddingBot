@@ -92,6 +92,9 @@ boss_image_urls_to_add = {
     "Needle Creeper": "https://redive.estertion.win/icon/unit/300600.webp",
     "Basilisk Allos": "https://redive.estertion.win/icon/unit/321900.webp",
     "Aquarius": "https://redive.estertion.win/icon/unit/302900.webp",
+    "Algedi": "https://redive.estertion.win/icon/unit/300400.webp",
+    "Obsidian Wyvern": "https://redive.estertion.win/icon/unit/312000.webp",
+    "Mushussu": "https://redive.estertion.win/icon/unit/303500.webp"
 }
 
 def save_sheet_id(id):
