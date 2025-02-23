@@ -441,6 +441,9 @@ def get_homework(clan='Worry', cache=False):
         homework = SqliteDict(sqlitedict_base_path + 'homework.sqlite', autocommit=True)
         return homework['chorry' if clan == 'Chorry' else 'worry' if clan == 'Worry' else 'borry']
 
+def clear_cached_homework(clan='Worry'):
+    homework = SqliteDict(sqlitedict_base_path + 'homework.sqlite', autocommit=True)
+    homework['chorry' if clan == 'Chorry' else 'worry' if clan == 'Worry' else 'borry'] = []
 
 def convert_ev_to_float(ev):
     ev_as_num = ''

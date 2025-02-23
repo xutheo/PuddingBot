@@ -55,8 +55,9 @@ roster_users = {
 
 cb_info_dict = SqliteDict(sqlitedict_base_path + 'clanbattle.sqlite', autocommit=True)
 
+boss_image_urls = SqliteDict(sqlitedict_base_path + 'bossinfo.sqlite', autocommit=True)
 
-boss_image_urls = {
+boss_image_urls_to_add = {
     "Wyvern": "https://redive.estertion.win/icon/unit/302100.webp",
     "Wild Gryphon": "https://redive.estertion.win/icon/unit/302000.webp",
     "Dirtigator": "https://redive.estertion.win/icon/unit/309100.webp",
@@ -87,6 +88,10 @@ boss_image_urls = {
     "Sagitarius": "https://redive.estertion.win/icon/unit/301800.webp",
     "Flower Chevalier": "https://redive.estertion.win/icon/unit/311200.webp",
     "Frost Hound": "https://redive.estertion.win/icon/unit/319600.webp",
+
+    "Needle Creeper": "https://redive.estertion.win/icon/unit/300600.webp",
+    "Basilisk Allos": "https://redive.estertion.win/icon/unit/321900.webp",
+    "Aquarius": "https://redive.estertion.win/icon/unit/302900.webp",
 }
 
 def save_sheet_id(id):
@@ -106,7 +111,7 @@ def save_homework_sheet_id(id, clan='Worry'):
     elif clan == 'Borry':
         cb_info_dict['hw_borry_sheet_id'] = id
 
-#save_homework_sheet_id('1UClOlALY5x7Jr3DMHoheSW3_Of1ToPRjfdA5VahWaQQ', chorry=False)
+#save_homework_sheet_id('1Jbv7YLunoHza472-Iel2HkGfSgyFO-Bj8OtcfHW-R3A')
 #save_homework_sheet_id('1FiVC_y4LOES6wIGN8591HZrwiSxejmAgXRNLzML_0ak', chorry=True)
 
 def get_homework_sheet_id(clan='Worry'):

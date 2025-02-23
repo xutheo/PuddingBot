@@ -1149,7 +1149,7 @@ async def atc(ctx,
             await ctx.respond("You do not have permissions to reset all atc statuses")
     return
 
-async def add_roles(clan, users):
+async def add_roles(clan, users, remove=True):
     if os.environ['COMPUTERNAME'] == 'ZALTEO' or os.environ['COMPUTERNAME'] == 'LAPTOP-RVEEJPKP':
         guild = bot.get_guild(1002644143589302352)
         test_roles = {
@@ -1221,7 +1221,8 @@ async def add_roles(clan, users):
                 print(e)
         if member:
             # Clean up old roles first
-            await member.remove_roles(*all_roles)
+            if remove:
+                await member.remove_roles(*all_roles)
             await member.add_roles(*boss_roles_to_add)
 
 
@@ -1229,7 +1230,8 @@ async def add_roles(clan, users):
 @bot.slash_command(guild_ids=wc_guild_ids.values(), description="Command to assign roles for bosses")
 async def assign_roles(ctx,
                        clan: Option(str, "Clan", choices=['Worry', 'Chorry', 'Borry'], required=True),
-                       user: Option(str, "Assigns roles for specified user", required=False, default=False)):
+                       user: Option(str, "Assigns roles for specified user", required=False, default=False),
+                       remove: Option(bool, "Remove roles", required=False, default=False)):
     message = is_allowed_channel(ctx.guild_id, ctx.channel_id)
     if message:
         await ctx.respond(message)
@@ -1241,7 +1243,7 @@ async def assign_roles(ctx,
         return
     await ctx.defer()
 
-    await add_roles(clan, [user] if user else None)
+    await add_roles(clan, [user] if user else None, remove)
     if not user:
         await ctx.followup.send(f"Assigned boss roles to all {clan} members.")
     else:
@@ -1509,6 +1511,8 @@ async def save_sheet_info(ctx,
         clan_battle_info.save_sheet_id(sheet_id)
     if hw_sheet_id:
         clan_battle_info.save_homework_sheet_id(hw_sheet_id, clan)
+        Homework.clear_cached_homework(clan)
+
     await ctx.respond(f"Saved sheet info!")
 
 @bot.slash_command(guild_ids=[1002644143589302352], description="Saves Homework")
@@ -1527,46 +1531,64 @@ async def save_time(ctx,
     clan_battle_info.save_time(year, month, day, hour, start)
     await ctx.respond(f"Saved cb time!")
 
+@bot.slash_command(guild_ids=[1002644143589302352], description="Saves boss thumbnail url")
+async def add_boss(ctx,
+                    name: Option(str, required=True),
+                    id: Option(str, required=True)):
+    clan_battle_info.boss_image_urls[name] = f'https://redive.estertion.win/icon/unit/{id}.webp'
+    await ctx.respond(f"Saved boss url!")
+
+def create_dict_from_hw(hw):
+    hw_dict = {}
+    for homework in hw:
+        hw_dict[homework.user] = homework
+    return hw_dict
 
 async def background_save_homework_and_roles():
     await bot.wait_until_ready()
     first_run = True
     while True:
         print('Background saving homework sheet for worry')
-        cached_hw = get_homework(clan='Worry', cache=True)
+        cached_hw = create_dict_from_hw(get_homework(clan='Worry', cache=True))
         save_homework('Worry')
-        new_hw = get_homework(clan='Worry', cache=True)
+        new_hw = create_dict_from_hw(get_homework(clan='Worry', cache=True))
         to_add_roles = []
-        for i in range(len(cached_hw)):
-            if cached_hw[i].compare(new_hw[i]):
-                continue
-            to_add_roles.append(cached_hw[i].user.lower())
+        for key in new_hw:
+            if key not in cached_hw:
+                to_add_roles.append(key.lower())
+            else:
+                if not cached_hw[key].compare(new_hw[key]):
+                    to_add_roles.append(key.lower())
         print(to_add_roles)
         await add_roles('Worry', to_add_roles)
         await asyncio.sleep(120)
 
         print('Background saving homework sheet for chorry')
-        cached_hw = get_homework(clan='Chorry', cache=True)
+        cached_hw = create_dict_from_hw(get_homework(clan='Chorry', cache=True))
         save_homework('Chorry')
-        new_hw = get_homework(clan='Chorry', cache=True)
+        new_hw = create_dict_from_hw(get_homework(clan='Chorry', cache=True))
         to_add_roles = []
-        for i in range(len(cached_hw)):
-            if cached_hw[i].compare(new_hw[i]):
-                continue
-            to_add_roles.append(cached_hw[i].user.lower())
+        for key in new_hw:
+            if key not in cached_hw:
+                to_add_roles.append(key.lower())
+            else:
+                if not cached_hw[key].compare(new_hw[key]):
+                    to_add_roles.append(key.lower())
         print(to_add_roles)
         await add_roles('Chorry', to_add_roles)
         await asyncio.sleep(120)
 
         print('Background saving homework sheet for borry')
-        cached_hw = get_homework(clan='Borry', cache=True)
+        cached_hw = create_dict_from_hw(get_homework(clan='Borry', cache=True))
         save_homework('Borry')
-        new_hw = get_homework(clan='Borry', cache=True)
+        new_hw = create_dict_from_hw(get_homework(clan='Borry', cache=True))
         to_add_roles = []
-        for i in range(len(cached_hw)):
-            if cached_hw[i].compare(new_hw[i]):
-                continue
-            to_add_roles.append(cached_hw[i].user.lower())
+        for key in new_hw:
+            if key not in cached_hw:
+                to_add_roles.append(key.lower())
+            else:
+                if not cached_hw[key].compare(new_hw[key]):
+                    to_add_roles.append(key.lower())
         print(to_add_roles)
         await add_roles('Borry', to_add_roles)
         await asyncio.sleep(120)
