@@ -1,7 +1,7 @@
 import pygsheets
 from clan_battle_info import (translation_sheet_id, get_sheet_id, test_sheet_id, dtier_sheet_ids,
                               dtier_simple_sheet_id, dtier_ots_id, get_homework_sheet_id,
-                              homework_sheet_gid, roster_sheet_id, chorry_roster_sheet_id, borry_roster_sheet_id,
+                              homework_sheet_gid, roster_sheet_id, bosses_info_id, chorry_roster_sheet_id, borry_roster_sheet_id,
                               metrics_sheet_id, metrics_gid, metrics_test_gid)
 from icon_bank import clean_text
 import os
@@ -138,3 +138,18 @@ def get_metrics_worksheet():
     sheets = gc.open_by_key(metrics_sheet_id)
     sheets_wksht = sheets.worksheet(property='id', value=metrics_gid)
     return sheets_wksht
+
+
+def get_bosses_info():
+    sheet_id = get_sheet_id()
+    timelines_data_store = gc.open_by_key(sheet_id)
+    bosses_info = timelines_data_store.worksheet(property='id', value=bosses_info_id).get_all_values()
+    bosses_info_dict = {
+        1: (bosses_info[2][3], f'https://redive.estertion.win/icon/unit/{bosses_info[4][2]}.webp'),
+        2: (bosses_info[2][10], f'https://redive.estertion.win/icon/unit/{bosses_info[4][9]}.webp'),
+        3: (bosses_info[2][17], f'https://redive.estertion.win/icon/unit/{bosses_info[4][16]}.webp'),
+        4: (bosses_info[2][24], f'https://redive.estertion.win/icon/unit/{bosses_info[4][23]}.webp'),
+        5: (bosses_info[2][31], f'https://redive.estertion.win/icon/unit/{bosses_info[4][30]}.webp')
+    }
+    print(bosses_info_dict)
+    return bosses_info_dict

@@ -25,6 +25,7 @@ score_multipliers = {
 
 dtier_simple_sheet_id = 1391911131
 dtier_ots_id = 835537673
+bosses_info_id = 1709504644
 
 #sheet_id = "1IvRAi0hh7-PehhD7jaeXU-OX6CU_oaAl6Sy5JKkIV90"
 test_sheet_id = "1IvRAi0hh7-PehhD7jaeXU-OX6CU_oaAl6Sy5JKkIV90"

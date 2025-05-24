@@ -108,6 +108,7 @@ channel_ids = {1002644143589302352:
                     "leads-chat": 1102862545884303400,
                     "chorry-leads": 1146492866814824618,
                     "borry-leads": 1212991847652266004,
+                    "clan-general": 1025780102694436956,
 
                     # Kitchen channels
                     "chefs-general": 1099083593222983700,
@@ -191,7 +192,7 @@ def is_allowed_channel(guild_id, channel_id):
     channel_ids_for_guild = channel_ids[guild_id].values()
     if channel_id not in channel_ids_for_guild and channel_id not in non_display_channel_ids.values():
         allowed_channels = ", ".join(channel_ids[guild_id].keys())
-        return f"Please use this command in the guild cb channels: {allowed_channels}"
+        return f"Please use this command in the guild cb channels"
     return None
 
 
@@ -1509,6 +1510,11 @@ async def save_sheet_info(ctx,
                           sheet_id: Option(str, required=False)):
     if sheet_id:
         clan_battle_info.save_sheet_id(sheet_id)
+        bosses_info = sheets_helper.get_bosses_info()
+        for boss in bosses_info:
+            boss_name = bosses_info[boss][0]
+            clan_battle_info.boss_image_urls[boss_name] = bosses_info[boss][1]
+            clan_battle_info.save_boss_name(boss, boss_name)
     if hw_sheet_id:
         clan_battle_info.save_homework_sheet_id(hw_sheet_id, clan)
         Homework.clear_cached_homework(clan)
