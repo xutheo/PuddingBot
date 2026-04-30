@@ -40,7 +40,7 @@ def get_animation_videos():
             skills_raw.append(row[5].strip())
     #print(mapping)
     return mapping
-get_animation_videos()
+#get_animation_videos()
 
 def get_animation_videos_names_bank():
     # Get animation cancel videos

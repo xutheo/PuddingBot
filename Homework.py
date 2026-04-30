@@ -7,6 +7,7 @@ from Timelines import get_single_boss_timelines_from_db
 from icon_bank import clean_text, shorten_name
 from time import sleep
 from Users import worry_users, chorry_users, borry_users
+from datetime import datetime, timedelta
 import json
 from clan_battle_info import score_multipliers
 
@@ -80,17 +81,45 @@ class Homework:
 
     BETWEEN_COMPS_ROW_OFFSET = 6
 
-    def __init__(self, user, homework_grid=None, roster_box=None, sheet=None):
+    def __init__(self, user, homework_grid=None, roster_box=None, sheet=None, clan=None):
         self.user = user
         self.roster_box = None
-        if user.lower() in worry_users:
-            self.id = worry_users[user.lower()].priconne_id
-        elif user.lower() in chorry_users:
-            self.id = chorry_users[user.lower()].priconne_id
-        elif user.lower() in borry_users:
-            self.id = borry_users[user.lower()].priconne_id
+        if not clan:
+            if user.lower() in worry_users:
+                self.id = worry_users[user.lower()].priconne_id
+            elif user.lower() in chorry_users:
+                self.id = chorry_users[user.lower()].priconne_id
+            elif user.lower() in borry_users:
+                self.id = borry_users[user.lower()].priconne_id
+            else:
+                self.id = None
         else:
-            self.id = None
+            if clan == 'Worry':
+                if user.lower() in worry_users:
+                    self.id = worry_users[user.lower()].priconne_id
+                elif user.lower() in chorry_users:
+                    self.id = chorry_users[user.lower()].priconne_id
+                elif user.lower() in borry_users:
+                    self.id = borry_users[user.lower()].priconne_id
+
+            elif clan == 'Chorry':
+                if user.lower() in chorry_users:
+                    self.id = chorry_users[user.lower()].priconne_id
+                elif user.lower() in worry_users:
+                    self.id = worry_users[user.lower()].priconne_id
+                elif user.lower() in borry_users:
+                    self.id = borry_users[user.lower()].priconne_id
+
+            elif clan == 'Borry' and user.lower() in borry_users:
+                if user.lower() in borry_users:
+                    self.id = borry_users[user.lower()].priconne_id
+                elif user.lower() in worry_users:
+                    self.id = worry_users[user.lower()].priconne_id
+                elif user.lower() in chorry_users:
+                    self.id = chorry_users[user.lower()].priconne_id
+            else:
+                self.id = None
+
 
         if homework_grid:
             comp1_units = []
@@ -423,6 +452,17 @@ def construct_homework_grid(i, j, values):
     #print(grid)
     return user, grid
 
+cached_homeworks = {
+    'Worry': [],
+    'Chorry': [],
+    'Borry': []
+}
+last_update_times = {
+    'Worry': datetime.now() - timedelta(minutes=15),
+    'Chorry': datetime.now() - timedelta(minutes=15),
+    'Borry': datetime.now() - timedelta(minutes=15)
+}
+
 # Returns a list of Homework objects representing users
 def get_homework(clan='Worry', cache=False):
     if not cache:
@@ -441,9 +481,31 @@ def get_homework(clan='Worry', cache=False):
         homework = SqliteDict(sqlitedict_base_path + 'homework.sqlite', autocommit=True)
         return homework['chorry' if clan == 'Chorry' else 'worry' if clan == 'Worry' else 'borry']
 
+
+def get_homework2(clan='Worry', cache=False):
+    global cached_homeworks
+    global last_update_times
+    if cache and datetime.now() < last_update_times[clan] + timedelta(minutes=15):
+        return cached_homeworks[clan]
+    else:
+        hw_wksht = get_homework_worksheet(clan)
+        values = hw_wksht.get_all_values()
+
+        homework = []
+        for i in range(len(values)):
+            for j in range(len(values[i])):
+                if values[i][j] == '#':
+                    user, grid = construct_homework_grid(i, j, values)
+                    homework.append(Homework(user, grid, clan=clan))
+
+        cached_homeworks[clan] = homework
+        last_update_times[clan] = datetime.now()
+        return homework
+
 def clear_cached_homework(clan='Worry'):
     homework = SqliteDict(sqlitedict_base_path + 'homework.sqlite', autocommit=True)
     homework['chorry' if clan == 'Chorry' else 'worry' if clan == 'Worry' else 'borry'] = []
+
 
 def convert_ev_to_float(ev):
     ev_as_num = ''

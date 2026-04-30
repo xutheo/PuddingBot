@@ -17,7 +17,7 @@ import clan_battle_info
 import re
 from icon_bank import icon_bank, clean_text
 import difflib
-from Homework import get_homework, convert_ev_to_float, get_roster, load_roster_from_sheets, save_homework
+from Homework import get_homework, get_homework2, convert_ev_to_float, get_roster, load_roster_from_sheets, save_homework
 import time
 from concurrent.futures import ThreadPoolExecutor
 import datetime
@@ -25,7 +25,8 @@ from sqlitedict import SqliteDict
 from time import sleep
 from Users import (worry_users, chorry_users, borry_users, mark_fc, get_fc_status, reset_fc_dicts,
                    atc_start, atc_end, atc_status, reset_atc_dict, find_user_by_discord_id,
-                   find_clan_by_discord_id, find_discord_id_by_priconne_id)
+                   find_clan_by_discord_id, find_discord_id_by_priconne_id, null_discord_ids,
+                   associate_discord_id, regenerate_master_dict, remove_extra_discord_id)
 from Metrics import save_metric_from_context, unload_metrics
 import asyncio
 
@@ -37,6 +38,8 @@ tabulate.PRESERVE_WHITESPACE = True
 translation_mapping = sheets_helper.get_translation_mapping()
 animation_bank = sheets_helper.get_animation_videos()
 names_bank = sheets_helper.get_animation_videos_names_bank()
+
+save_hw2_flag = True
 
 # Define our bot
 guild_ids = {"Zalteo Test Server": 1002644143589302352,  # Zalteo Test Server
@@ -109,7 +112,8 @@ channel_ids = {1002644143589302352:
                     "chorry-leads": 1146492866814824618,
                     "borry-leads": 1212991847652266004,
                     "clan-general": 1025780102694436956,
-
+                    "clan-bot-spam": 1497872136558088282,
+                    
                     # Kitchen channels
                     "chefs-general": 1099083593222983700,
                     "cooking-blue4-guides": 1229137315826237470,
@@ -908,7 +912,8 @@ async def reset_disband(ctx):
 
 
 # =============== Disband command =============
-@bot.slash_command(guild_ids=[1002644143589302352, 1025780100291112960], description="Disband...")
+#, 1025780100291112960
+@bot.slash_command(guild_ids=[1002644143589302352], description="Disband...")
 async def disband(ctx):
     save_metric_from_context(ctx)
     #await ctx.defer()
@@ -1190,41 +1195,50 @@ async def add_roles(clan, users, remove=True):
         all_roles = list(worry_boss_roles.values()) + list(chorry_boss_roles.values()) + list(borry_boss_roles.values())
         boss_roles = chorry_boss_roles if clan == 'Chorry' else worry_boss_roles if clan == 'Worry' else borry_boss_roles
 
+    global save_hw2_flag
     if users is not None and len(users) == 0:
         return
     users_lower = None
     if users:
         users_lower = [user.lower() for user in users]
-    homework = get_homework(clan, cache=True)
+    homework = get_homework2(clan, cache=True) if save_hw2_flag else get_homework(clan, cache=True)
     for hw in homework:
         if users_lower and hw and hw.user and hw.user.lower() not in users_lower:
             continue
         user_discord_id = find_discord_id_by_priconne_id(hw.id)
         if not user_discord_id:
             continue
-        boss_roles_to_add = []
-        #print(hw.comp1, hw.comp2, hw.comp3)
-        print(f"Assigning boss roles for {hw.user}")
-        if hw.comp1.tl_code:
-            role = boss_roles[int(hw.comp1.tl_code[1])]
-            boss_roles_to_add.append(role)
-        if hw.comp2.tl_code:
-            role = boss_roles[int(hw.comp2.tl_code[1])]
-            boss_roles_to_add.append(role)
-        if hw.comp3.tl_code:
-            role = boss_roles[int(hw.comp3.tl_code[1])]
-            boss_roles_to_add.append(role)
         member = guild.get_member(int(user_discord_id))
         if not member:
             try:
                 member = await guild.fetch_member(int(user_discord_id))
             except Exception as e:
                 print(e)
+                continue
+        existing_role_ids = [role.id for role in member.roles]
+        bosses_to_add = []
+        roles_to_remove = []
+        roles_to_add = []
+
+        #print(hw.comp1, hw.comp2, hw.comp3)
+        print(f"Assigning boss roles for {hw.user}")
+        if hw.comp1.tl_code:
+            bosses_to_add.append(int(hw.comp1.tl_code[1]))
+        if hw.comp2.tl_code:
+            bosses_to_add.append(int(hw.comp2.tl_code[1]))
+        if hw.comp3.tl_code:
+            bosses_to_add.append(int(hw.comp3.tl_code[1]))
+        for boss in boss_roles:
+            role = boss_roles[boss]
+            if boss in bosses_to_add and not role.id in existing_role_ids:
+                roles_to_add.append(role)
+            elif role.id in existing_role_ids and not boss in bosses_to_add:
+                roles_to_remove.append(role)
+
+        print(roles_to_add, roles_to_remove)
         if member:
-            # Clean up old roles first
-            if remove:
-                await member.remove_roles(*all_roles)
-            await member.add_roles(*boss_roles_to_add)
+            await member.remove_roles(*roles_to_remove)
+            await member.add_roles(*roles_to_add)
 
 
 # =============== Assign roles command =============
@@ -1521,11 +1535,54 @@ async def save_sheet_info(ctx,
 
     await ctx.respond(f"Saved sheet info!")
 
+@bot.slash_command(guild_ids=wc_guild_ids.values(), description="Get everyone not connected to ninon")
+async def get_null_discord_ids(ctx):
+    if null_discord_ids:
+        print(null_discord_ids)
+    stringbuilder = ''
+    for id in null_discord_ids:
+        stringbuilder += str(id) + ': ' + str(null_discord_ids[id]) + '\n\n'
+    if stringbuilder == '':
+        stringbuilder = 'No null ids found!'
+
+    await ctx.respond(f"{stringbuilder}")
+
+
+@bot.slash_command(guild_ids=wc_guild_ids.values(), description="Get everyone not connected to ninon")
+async def add_discord_id(ctx,
+                         clan: Option(str, "Clan", choices=['Worry', 'Chorry', 'Borry'], required=True),
+                         priconne_id: int,
+                         discord_id: str):
+    associate_discord_id(clan, priconne_id, discord_id)
+    regenerate_master_dict(clan)
+
+    await ctx.respond(f"Associated priconne ID: {priconne_id} with discord ID: {discord_id}")
+
+
+@bot.slash_command(guild_ids=[1002644143589302352], description="Saves Homework")
+async def remove_discord_id_override(ctx, priconne_id):
+    remove_extra_discord_id(priconne_id)
+    await ctx.respond(f"Removed discord id associated with {priconne_id}")
+
+
 @bot.slash_command(guild_ids=[1002644143589302352], description="Saves Homework")
 async def save_hw(ctx,
                   clan: Option(str, "Clan", choices=['Worry', 'Chorry', 'Borry'], required=True)):
     save_homework(clan)
     await ctx.respond(f"Saved homework")
+
+
+@bot.slash_command(guild_ids=[1002644143589302352], description="Set Flag")
+async def set_hw_flag(ctx,
+                  method: Option(str, "Homework method", choices=['homework', 'homework2'], required=True)):
+    global save_hw2_flag
+    if method == 'homework':
+        save_hw2_flag = False
+    else:
+        save_hw2_flag = True
+
+    await ctx.respond(f"Set homework flag")
+
 
 @bot.slash_command(guild_ids=[1002644143589302352], description="Saves boss thumbnail url")
 async def save_time(ctx,
@@ -1536,6 +1593,12 @@ async def save_time(ctx,
                     hour: Option(int, required=True)):
     clan_battle_info.save_time(year, month, day, hour, start)
     await ctx.respond(f"Saved cb time!")
+
+@bot.slash_command(guild_ids=[1002644143589302352], description="Update animation bank cache")
+async def save_time(ctx):
+    global animation_bank
+    animation_bank = sheets_helper.get_animation_videos()
+    await ctx.respond(f"Updated animation bank")
 
 @bot.slash_command(guild_ids=[1002644143589302352], description="Saves boss thumbnail url")
 async def add_boss(ctx,
@@ -1555,49 +1618,16 @@ async def background_save_homework_and_roles():
     first_run = True
     while True:
         print('Background saving homework sheet for worry')
-        cached_hw = create_dict_from_hw(get_homework(clan='Worry', cache=True))
-        save_homework('Worry')
-        new_hw = create_dict_from_hw(get_homework(clan='Worry', cache=True))
-        to_add_roles = []
-        for key in new_hw:
-            if key not in cached_hw:
-                to_add_roles.append(key.lower())
-            else:
-                if not cached_hw[key].compare(new_hw[key]):
-                    to_add_roles.append(key.lower())
-        print(to_add_roles)
-        await add_roles('Worry', to_add_roles)
-        await asyncio.sleep(120)
+        await add_roles('Worry', None)
+        await asyncio.sleep(600)
 
         print('Background saving homework sheet for chorry')
-        cached_hw = create_dict_from_hw(get_homework(clan='Chorry', cache=True))
-        save_homework('Chorry')
-        new_hw = create_dict_from_hw(get_homework(clan='Chorry', cache=True))
-        to_add_roles = []
-        for key in new_hw:
-            if key not in cached_hw:
-                to_add_roles.append(key.lower())
-            else:
-                if not cached_hw[key].compare(new_hw[key]):
-                    to_add_roles.append(key.lower())
-        print(to_add_roles)
-        await add_roles('Chorry', to_add_roles)
-        await asyncio.sleep(120)
+        await add_roles('Chorry', None)
+        await asyncio.sleep(600)
 
         print('Background saving homework sheet for borry')
-        cached_hw = create_dict_from_hw(get_homework(clan='Borry', cache=True))
-        save_homework('Borry')
-        new_hw = create_dict_from_hw(get_homework(clan='Borry', cache=True))
-        to_add_roles = []
-        for key in new_hw:
-            if key not in cached_hw:
-                to_add_roles.append(key.lower())
-            else:
-                if not cached_hw[key].compare(new_hw[key]):
-                    to_add_roles.append(key.lower())
-        print(to_add_roles)
-        await add_roles('Borry', to_add_roles)
-        await asyncio.sleep(120)
+        await add_roles('Borry', None)
+        await asyncio.sleep(600)
 
 
 #executor.submit(background_save_disband_messages)
@@ -1605,7 +1635,7 @@ async def background_save_homework_and_roles():
 #executor.submit(background_save_homework_and_roles)
 loop = asyncio.get_event_loop()
 loop.create_task(background_save_homework_and_roles())
-loop.create_task(background_save_disband_messages())
+#loop.create_task(background_save_disband_messages())
 
 #keep_alive()
 token = json.load(open("service_account.json"))['discord_token']

@@ -13,9 +13,10 @@ load_to_db_lock = Lock()
 class Timeline:
     UNIT_NAME_ROW = 2
     UNIT_LEVEL_ROW = 7
-    UNIT_RANK_ROW = 8
-    UNIT_STAR_ROW = 9
-    UNIT_UE_ROW = 10
+    UNIT_RANK_ROW = 7
+    UNIT_STAR_ROW = 8
+    UNIT_UE_ROW = 9
+    UNIT_CR_ROW = 10
 
     TL_START_ROW = 15
     TL_COL_LABELS_ROW = 13
@@ -23,9 +24,10 @@ class Timeline:
 
     SIMPLE_UNIT_NAME_ROW = 2
     SIMPLE_UNIT_LEVEL_ROW = 6
-    SIMPLE_UNIT_RANK_ROW = 7
-    SIMPLE_UNIT_STAR_ROW = 8
-    SIMPLE_UNIT_UE_ROW = 9
+    SIMPLE_UNIT_RANK_ROW = 6
+    SIMPLE_UNIT_STAR_ROW = 7
+    SIMPLE_UNIT_UE_ROW = 8
+    SIMPLE_UNIT_CR_ROW = 9
 
     def __init__(self, tl_data, boss, tl_cell_tuple, simple, ot=False):
         if not simple:
@@ -53,7 +55,8 @@ class Timeline:
                             tl_data[self.UNIT_LEVEL_ROW][i + 1],
                             tl_data[self.UNIT_RANK_ROW][i + 1],
                             tl_data[self.UNIT_STAR_ROW][i + 1],
-                            tl_data[self.UNIT_UE_ROW][i + 1])
+                            tl_data[self.UNIT_UE_ROW][i + 1],
+                            tl_data[self.UNIT_CR_ROW][i + 1])
                 self.units.append(unit)
             tl_end_row = len(tl_data)
             self.tl_labels = list(filter(None, tl_data[self.TL_COL_LABELS_ROW]))
@@ -97,7 +100,8 @@ class Timeline:
                             tl_data[self.SIMPLE_UNIT_LEVEL_ROW][i + 2],
                             tl_data[self.SIMPLE_UNIT_RANK_ROW][i + 2],
                             tl_data[self.SIMPLE_UNIT_STAR_ROW][i + 2],
-                            tl_data[self.SIMPLE_UNIT_UE_ROW][i + 2])
+                            tl_data[self.SIMPLE_UNIT_UE_ROW][i + 2],
+                            tl_data[self.SIMPLE_UNIT_CR_ROW][i + 2])
                 self.units.append(unit)
 
             tl_time = [row[7] for row in tl_data]
@@ -131,15 +135,16 @@ class Timeline:
 
 
 class Unit:
-    def __init__(self, name, level, rank, star, ue):
+    def __init__(self, name, level, rank, star, ue, cr):
         self.name = name
         self.level = level
         self.rank = rank
         self.star = star
         self.ue = ue
+        self.cr = cr
 
     def __str__(self):
-        unit_string = f'{self.name}/LV{self.level}/R{self.rank}/{self.star}⭐/UE:{self.ue}\n'
+        unit_string = f'{self.name}/R{self.rank}/{self.star}⭐/UE:{self.ue}/CR:{self.cr}\n'
         return unit_string
 
 

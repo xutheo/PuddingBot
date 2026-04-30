@@ -19,69 +19,9 @@ class User:
                 f'RosterName: {self.roster_name}, HWName: {self.homework_name}')
 
 
-worry_base_users = {
-    449396331: User('Astordor', 203168191889801217, 336253788),
-    852701662: User('Dabomstew', 79515100536385536, 852701662),
-    576099458: User('Woody', 416540817168007189, 576099458),
-    725436445: User('Tomoeri', 426704723962232834, 725436445),
-    631710942: User('Kami', 268457898001039362, 631710942),
-    612311272: User('Arjen', 244555857994448906, 612311272),
-    527270031: User('Hachimitsu', 852629725179674675, 527270031),
-    448053269: User('Olegase', 201054689800880128, 448053269),
-    640789706: User('Chocolate', 431497734047137812, 640789706),
-    263503371: User('Squawk', 395509094934642688, 263503371),
-    516973449: User('Panda', 218907301199872000, 516973449),
-    865633484: User('Mimicon', 466488841201516545, 865633484),
-    698454373: User('Reonidas', 327401833561587713, 698454373),
-    573657443: User('Takamori', 484142867044892696, 573657443),
-    221209908: User('Shuffling', 186493198007271424, 221209908),
-    420434940: User('Kyruto', 460222637155549204, 420434940),
-    313569259: User('Dragon', 305127967141658624, 313569259),
-    865498980: User('Asandari', 126783165342679041, 865498980),
-    913842239: User('Kana', 250690641149820938, 913842239),
-    675911323: User('Justin', 141248381610754049, 675911323),
-    324304754: User('Belial', 87386705010630656, 324304754),
-    548338315: User('VVanky', 186148103877951488, 548338315),
-    765932856: User('Richard', 297122012449734676, 765932856),
-    136787075: User('Yuzu', 443785872807297024, 136787075),
-    973891706: User('Pyragon', 215985215468732418, 973891706),
-    903158276: User('Arxos', 182221373475782656, 903158276),
-    477080470: User('Zalteo', 152242204826533889, 477080470),
-}
-# Manually add astordor, justin, richard
+worry_base_users = {}
 
-chorry_base_users = {
-    911255036: User('Ark', 766868393848340480, 911255036),
-    269768284: User('ViiPenguin', 192114683090698241, 269768284),
-    117194181: User('Kirby', 143361945804734464, 117194181),
-    826140928: User('Rin', 277026949178851329, 826140928),
-    801922329: User('Avir', 791397594827587624, 801922329),
-    293195590: User('LastTour', 956960841259954257, 293195590),
-    788536578: User('Kou', 408955778456748042, 788536578),
-    158447620: User('Kuron', 584402132778745887, 158447620),
-    793505279: User('Sariel', 408470996773765120, 793505279),
-    817101890: User('Osmium', 656489366616670228, 817101890),
-    498111620: User('Momiji', 255197886059511808, 498111620),
-    201127998: User('Algedi', 145513216187826176, 201127998),
-    244327197: User('Ern＠2', 486164996645060618, 244327197),
-    121242234: User('Mio', 372390056301690894, 121242234),
-    778458742: User('Ecu', 200245308985180160, 778458742),
-    715457115: User('Xern', 406664128997097482, 715457115),
-    680795925: User('Noinloki', 581303630292975627, 680795925),
-    344543240: User('NXH', 201830731012505601, 344543240),
-    554628237: User('Fulano', 237988764012511234, 554628237),
-    245884571: User('Woody2', 416540817168007189, 245884571),
-    216755573: User('VIPfighter', 178138531758080000, 216755573),
-    937918198: User('Rei', 163682455197319168, 937918198),
-    177901622: User('Jaym', 88044613750759424, 177901622),
-    324585111: User('Nata', 173202402567127040, 324585111),
-    906356205: User('DarkGe', 408245460445167627, 906356205),
-    484301869: User('Kut', 146283850245472256, 484301869),
-    879936134: User('AtherialDovah', 186582097463345152, 879936134),
-    963789593: User('Avatar', 218199797184724993, 963789593),
-    131899805: User('Paris', 630909379113254922, 131899805),
-}
-# Manually add doremy, nxh, and sariel
+chorry_base_users = {}
 
 borry_base_users = {}
 
@@ -90,6 +30,35 @@ extra_users = {}
 worry_discord_ids = {}
 chorry_discord_ids = {}
 borry_discord_ids = {}
+
+null_discord_ids = {}
+extra_discord_ids = SqliteDict(sqlitedict_base_path + 'extra_discord_ids.sqlite', autocommit=True)
+
+def associate_discord_id(clan, priconne_id, discord_id):
+    global worry_discord_ids
+    global chorry_discord_ids
+    global borry_discord_ids
+    added = False
+    if clan == 'Worry':
+        worry_discord_ids[priconne_id] = discord_id
+        added = True
+    elif clan == 'Chorry':
+        chorry_discord_ids[priconne_id] = discord_id
+        added = True
+    elif clan == 'Borry':
+        borry_discord_ids[priconne_id] = discord_id
+        added = True
+    if added:
+        extra_discord_ids[priconne_id] = discord_id
+
+    if priconne_id in null_discord_ids:
+        del null_discord_ids[priconne_id]
+
+
+def remove_extra_discord_id(priconne_id):
+    if priconne_id in extra_discord_ids:
+        del extra_discord_ids[priconne_id]
+
 
 def get_discord_ids():
     worry_url = 'https://roboninon.win/api/v1/priconne/clan/490028/members'
@@ -110,10 +79,18 @@ def get_discord_ids():
             for c in content:
                 if c['discord_id']:
                     try:
+                        # Olegase exception
+                        if c['viewer_id'] and c['viewer_id'] == 445791452:
+                            worry_discord_ids[445791452] = 102530746287149056
+                            continue
                         worry_discord_ids[c['viewer_id']] = int(c['discord_id'])
                     except Exception as e:
                         print(f"Could not save worry discord id because of {e}")
-
+                else:
+                    if c['viewer_id'] and c['viewer_id'] in extra_discord_ids:
+                        worry_discord_ids[c['viewer_id']] = extra_discord_ids[c['viewer_id']]
+                    else:
+                        null_discord_ids[c['viewer_id']] = c
         for id in worry_base_users:
             if id not in worry_discord_ids:
                 worry_discord_ids[id] = worry_base_users[id].discord_id
@@ -121,11 +98,24 @@ def get_discord_ids():
         if chorry_ninon_users.ok:
             content = chorry_ninon_users.json()
             for c in content:
+                # GarretK exception
+                if c['viewer_id'] == 208175965:
+                    chorry_discord_ids[208175965] = 225174985277177856
+                    continue
                 if c['discord_id']:
                     try:
+                        # Avatar? Algedi? account
+                        if c['viewer_id'] and c['viewer_id'] == 963789593:
+                            chorry_discord_ids[963789593] = 300752504050679820
+                            continue
                         chorry_discord_ids[c['viewer_id']] = c['discord_id']
                     except Exception as e:
                         print(f"Could not save chorry discord id because of {e}")
+                else:
+                    if c['viewer_id'] and c['viewer_id'] in extra_discord_ids:
+                        chorry_discord_ids[c['viewer_id']] = extra_discord_ids[c['viewer_id']]
+                    else:
+                        null_discord_ids[c['viewer_id']] = c
 
         for id in chorry_base_users:
             if id not in chorry_discord_ids:
@@ -139,6 +129,11 @@ def get_discord_ids():
                         borry_discord_ids[c['viewer_id']] = int(c['discord_id'])
                     except Exception as e:
                         print(f"Could not save worry discord id because of {e}")
+                else:
+                    if c['viewer_id'] and c['viewer_id'] in extra_discord_ids:
+                        borry_discord_ids[c['viewer_id']] = extra_discord_ids[c['viewer_id']]
+                    else:
+                        null_discord_ids[c['viewer_id']] = c
 
         for id in borry_base_users:
             if id not in borry_discord_ids:
@@ -226,6 +221,17 @@ worry_users = generate_master_user_dict(clan='Worry')
 #    print(f'{user}: {worry_users[user]}')
 chorry_users = generate_master_user_dict(clan='Chorry')
 borry_users = generate_master_user_dict(clan='Borry')
+
+def regenerate_master_dict(clan):
+    global worry_users
+    global chorry_users
+    global borry_users
+    if clan == 'Worry':
+        worry_users = generate_master_user_dict(clan='Worry')
+    if clan == 'Chorry':
+        worry_users = generate_master_user_dict(clan='Chorry')
+    if clan == 'Borry':
+        worry_users = generate_master_user_dict(clan='Borry')
 
 '''for user in worry_users:
     print(user)

@@ -45,8 +45,12 @@ def get_base_embed(timeline, include_units=True):
     for unit in timeline.units:
         unit_cleaned = clean_text(unit.name)
         unit_string += f'{icon_bank[unit_cleaned]} ' if unit_cleaned in icon_bank else f'{unit.name}: '
-        unit_string += f'LV{unit.level} | R{unit.rank} | {unit.star}⭐ | UE: {unit.ue}\n' if unit.ue \
-            else f'LV{unit.level} | R{unit.rank} | {unit.star}⭐\n'
+        unit_string += f'R{unit.rank} | {unit.star}⭐'
+        if unit.ue:
+            unit_string += f' | UE: {unit.ue}'
+        if unit.cr:
+            unit_string += f' | CR: {unit.cr}'
+        unit_string += f'\n'
 
     if include_units:
         embed.add_field(
